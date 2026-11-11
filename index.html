@@ -783,7 +783,8 @@ renderShopCategories();renderShopResults();
         <button class="primary" type="submit">입금 후 충전 신청</button></form>` : '<p>입금 계좌 안내를 준비하고 있습니다.</p>') +
       section('내 충전 내역', history.length ? history.map(row => `<div class="booking-row"><b>${money(row.amount_krw)}원 · ${row.approved_at?'승인 완료':'입금 확인 대기'}</b>
         ${esc(new Date(row.submitted_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))}</div>`).join('') : '<p>신청 내역이 없습니다.</p>') +
-      section('광고 예약', '<p>광고 일정과 포인트 사용 기능은 연결 준비 중입니다.</p>');
+      section('광고 예약', '<p>광고 일정과 포인트 사용 기능은 연결 준비 중입니다.</p><div id="businessAdRates"></div>');
+    loadAdRates($('businessAdRates'), false);
     const form = $('topupForm');
     if (!form) return;
     let submittedKey, submittedDetails;
@@ -822,6 +823,60 @@ renderShopCategories();renderShopResults();
       };
     });
   }
+  async function loadAdRates(container, editable) {
+    container.textContent = '광고 단가 불러오는 중…';
+    try {
+      const rows = await checked(client.from('tripfact_ad_rates')
+        .select('zone_id,daily_points,updated_at').eq('city_slug', 'danang'));
+      const byZone = new Map(rows.map(row => [row.zone_id, row]));
+      container.replaceChildren();
+      if (editable) {
+        const reload = document.createElement('button');
+        reload.className = 'vendor-link';
+        reload.textContent = '단가 새로 불러오기';
+        reload.onclick = () => loadAdRates(container, editable);
+        container.append(reload);
+      }
+      for (const zone of adZones) {
+        const rate = byZone.get(zone.id);
+        if (!rate) continue;
+        const row = document.createElement(editable ? 'form' : 'div');
+        row.className = 'booking-row';
+        row.innerHTML = editable
+          ? `<label class="field" for="ad-rate-${zone.id}">${esc(zone.name)} · P/일</label>
+             <div style="display:flex;align-items:center;gap:8px">
+               <input id="ad-rate-${zone.id}" name="daily" type="number" inputmode="numeric"
+                 min="0" max="2147483647" step="1" value="${rate.daily_points}" required>
+               <button class="primary" style="flex:none" type="submit">저장</button>
+             </div><small class="vendor-help" role="status"></small>`
+          : `<b>${esc(zone.name)}</b><span>${money(rate.daily_points)} P / 일</span>`;
+        if (editable) row.onsubmit = async event => {
+          event.preventDefault();
+          const input = row.elements.daily;
+          const status = row.querySelector('[role=status]');
+          const control = row.querySelector('button');
+          const value = input.valueAsNumber;
+          if (!Number.isInteger(value) || value < 0 || value > 2147483647) return;
+          control.disabled = true;
+          input.disabled = true;
+          status.textContent = '저장 중…';
+          try {
+            rate.updated_at = await checked(client.rpc('tripfact_save_ad_rate', {
+              p_city: 'danang', p_zone: zone.id, p_daily_points: value,
+              p_expected_updated_at: rate.updated_at,
+            }));
+            rate.daily_points = value;
+            status.textContent = money(value) + ' P / 일로 저장했습니다.';
+          } catch (error) { status.textContent = error.message; }
+          finally { control.disabled = false; input.disabled = false; }
+        };
+        container.append(row);
+      }
+      if (!rows.length) container.append('등록된 광고 단가가 없습니다.');
+    } catch {
+      container.textContent = '광고 단가를 불러오지 못했습니다. Supabase에서 광고 단가 설정을 확인해 주세요.';
+    }
+  }
   async function adminPage() {
     const [businesses, credits] = await Promise.all([
       checked(client.from('tripfact_profiles').select('user_id,business_name').eq('member_type','business')
@@ -834,8 +889,7 @@ renderShopCategories();renderShopResults();
         ${esc(row.business_name)} <button class="vendor-link" data-business="${esc(row.user_id)}">업체 승인</button></div>`).join('') : '<p>확인할 업체가 없습니다.</p>') +
       section('포인트 지급 내역', credits.length ? credits.map(row => `<div class="booking-row">
         <b>+${money(row.amount_krw)}P · ${esc(row.depositor)}</b>${esc(new Date(row.approved_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))}</div>`).join('') : '<p>포인트 지급 내역이 없습니다.</p>') +
-      section('광고 구역 단가', '<p>현재 시안의 단가입니다. 실제 판매 단가는 운영 설정에서 확정해야 합니다.</p>' +
-        adZones.map(zone => `<div class="rate-line"><span>${esc(zone.name)}</span><strong>${money(zone.daily)}P / 일</strong></div>`).join('')) +
+      section('광고 구역 단가', '<p>같은 광고 구역의 하루 단가는 다낭·나트랑·푸꾸옥에 공통 적용됩니다.</p><div id="adminAdRates"></div>') +
       section('광고 일정 · 포인트 사용', '<p>실제 광고 예약과 포인트 차감이 연결되면 이곳에서 확인할 수 있습니다.</p>');
     $('memberContent').querySelectorAll('[data-business]').forEach(control => {
       control.onclick = async () => {
@@ -847,6 +901,7 @@ renderShopCategories();renderShopResults();
         finally { control.disabled = false; }
       };
     });
+    loadAdRates($('adminAdRates'), true);
     await pollAlerts();
   }
   let pageVersion = 0;
