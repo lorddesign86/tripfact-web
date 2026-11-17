@@ -1,9 +1,12 @@
 import hashlib
 import json
 import re
+import unicodedata
 from collections import Counter, defaultdict
 from datetime import datetime, timedelta, timezone
+from statistics import mean
 from urllib.parse import urlparse
+from gspread.exceptions import WorksheetNotFound
 
 KST = timezone(timedelta(hours=9))
 
@@ -41,7 +44,62 @@ def read_rates(rows):
     return rates
 
 
+def read_exchange_locations(rows, today=None):
+    """Compare matching denominations, counting each unambiguous source post once."""
+    end = today or datetime.now(KST).date()
+    start = (end - timedelta(days=6)).isoformat()
+    end = end.isoformat()
+    groups = defaultdict(set)
+    for row in rows:
+        posted = str(row.get('글 작성일', '')).strip()
+        if not start <= posted <= end or row.get('분류') not in ('실거래 후보', '환율 언급'):
+            continue
+        shop = re.sub(r'\s+', '', str(row.get('환전소(직접 확인)', ''))).lower()
+        if shop.isascii() or re.search(r'[a-z]', shop):
+            shop = ''.join(c for c in unicodedata.normalize('NFKD', shop)
+                           if not unicodedata.combining(c))
+        method = row.get('환전 방식')
+        names = [label for label, aliases in (
+            ('김옌', ('김옌', 'kimyen')), ('김가', ('김가', 'kimga')),
+            ('손하', ('손하', 'sonha'))) if any(alias in shop for alias in aliases)]
+        if method == '공항' or '공항' in shop:
+            names.append('공항')
+        if len(names) != 1:
+            continue
+        currency = row.get('화폐')
+        nominal = {'KRW': 50000, 'USD': 100}.get(currency)
+        value = amount(row.get('받은 동(VND)', ''))
+        source = safe_url(row.get('출처 링크', ''))
+        if nominal and amount(row.get('기준 금액', '')) == nominal and value and source:
+            groups[names[0], currency, urlparse(source)._replace(query='', fragment='').geturl()].add(value)
+
+    samples = defaultdict(list)
+    for (name, currency, _), values in groups.items():
+        if len(values) == 1:
+            samples[name, currency].append(next(iter(values)))
+    return [
+        {'location': name, 'currency': currency, 'posts': len(values),
+         'mean_vnd': round(mean(values), 2) if values else None, 'from': start, 'to': end}
+        for name in ('김옌', '김가', '손하', '공항')
+        for currency in ('KRW', 'USD')
+        for values in [samples[name, currency]]
+    ]
+
+
 def build_snapshot(tables):
+    evidence = defaultdict(list)
+    review_ids = set()
+    for row in tables.get('업체리뷰 근거', []):
+        review_id = row.get('근거ID')
+        source = safe_url(row.get('출처 URL', ''))
+        if not review_id or review_id in review_ids or not source or not row.get('후기 요약'):
+            continue
+        review_ids.add(review_id)
+        evidence[(row.get('업종'), row.get('업체ID'))].append({
+            'topic': row.get('언급 항목', ''), 'direction': row.get('평가 방향', ''),
+            'summary': row['후기 요약'], 'source': source, 'sourceType': row.get('출처 유형', ''),
+            'date': row.get('후기 작성 시점', ''),
+        })
     menus = defaultdict(list)
     for row in tables['가격메뉴']:
         low = amount(row.get('정가·최소가(VND)', ''))
@@ -65,8 +123,14 @@ def build_snapshot(tables):
                 continue
             if '사이트 노출 대상' in row and row['사이트 노출 대상'] != '포함':
                 continue
+            if tab == '이발소' and (
+                row.get('한국식 풀케어 확인') != '귀청소·마사지·손발톱 관리 확인'
+                or row.get('한국인 운영 확인') != '확인 완료'
+            ):
+                continue
             seen.add((tab, source_id))
             entries = menus[(tab, source_id)]
+            reviews = sorted(evidence[(tab, source_id)], key=lambda item: str(item['date']), reverse=True)
             comparable = [m for m in entries if m['minutes'] == 90 and m['service'] == '아로마'] if tab == '마사지' else []
             value = min((m['low'] for m in comparable), default=None)
             image = safe_url(row.get('메인이미지 원본 URL', ''))
@@ -96,6 +160,9 @@ def build_snapshot(tables):
                 'services': row.get('시설·서비스', ''),
                 'kakao': safe_url(row.get('카카오톡 예약 URL', '')),
                 'reservation': safe_url(row.get('예약 URL', '')),
+                'reviewEvidence': reviews,
+                'reviewHighlight': next((item['summary'] for item in reviews if item['direction'] == '긍정'), ''),
+                'reviewCaution': next((item['summary'] for item in reviews if item['direction'] == '주의'), ''),
                 'badge': category, 'date': row.get('구글 확인일', '')[:10],
             })
 
@@ -137,15 +204,21 @@ def build_snapshot(tables):
             mentions[product_id] = entry
     return dict(city='danang', imported_at=datetime.now(KST).isoformat(timespec='seconds'),
         rates=rates, rate_status=next((r.get('collection_status') for r in tables['웹요약']), ''),
-        places=places, products=products, stats=stats, mentions=mentions)
+        places=places, products=products, stats=stats, mentions=mentions,
+        exchange_locations=read_exchange_locations(tables.get('환전수집', [])))
 
 
 def read_workbook(client):
-    tabs = [*CATEGORIES, '가격메뉴', '쇼핑목록', '쇼핑웹요약', '웹요약', '쇼핑수집현황']
+    tabs = [*CATEGORIES, '가격메뉴', '쇼핑목록', '쇼핑웹요약', '웹요약', '쇼핑수집현황', '환전수집']
     book = client.open_by_key(WORKBOOK)
     batches = book.values_batch_get([f"'{tab}'!A1:AZ" for tab in tabs])['valueRanges']
     tables = {}
     for tab, batch in zip(tabs, batches, strict=True):
         headers, *rows = batch.get('values') or [[]]
         tables[tab] = [dict(zip(headers, row)) for row in rows]
+    try:
+        reviews = book.worksheet('업체리뷰 근거').get_all_records()
+    except WorksheetNotFound:
+        reviews = []
+    tables['업체리뷰 근거'] = reviews
     return build_snapshot(tables)
