@@ -78,6 +78,17 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
   .header .member-entry{max-width:36vw}
   .mobile-nav button{font-size:12px}
 }
+.place-review-preview {
+  margin-top: 6px;
+  color: #415e50;
+  font-size: .82rem;
+  line-height: 1.45;
+  white-space: normal;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  overflow: hidden;
+}
 </style></head>
 <body>
 <div class="top"><header class="wrap header"><a class="brand" href="#home" aria-label="트립팩트 홈"><span class="brand-icon">🌴</span><div><strong>다낭 트립팩트<span style="color:#e6a56b">.</span></strong><small>YOUR LITTLE TRAVEL BUDDY</small></div></a><nav class="desktop-nav" aria-label="주 메뉴"><button data-tab="home" class="active">여행 홈</button><button data-tab="market">쇼핑시세</button><button data-tab="spa">케어 & 뷰티</button><button data-tab="dining">맛집 & 카페</button></nav><button class="saved-top" data-tab="favs">♡ 내 찜 <b id="savedCount">0</b></button></header></div>
@@ -253,7 +264,7 @@ let currentTab='home',currency='USD',listFilter='전체',weatherLocation=0,marke
 let favorites=[];try{favorites=JSON.parse(localStorage.getItem('tripfact-favs-v1')||'[]');if(!Array.isArray(favorites))favorites=[]}catch{}
 const $=id=>document.getElementById(id), fmt=n=>Math.round(n).toLocaleString('ko-KR');
 const escapeHTML=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-function card(p){return `<article class="place"><button class="heart ${favorites.includes(p.id)?'liked':''}" aria-label="${escapeHTML(p.name)} 찜 ${favorites.includes(p.id)?'해제':'추가'}" aria-pressed="${favorites.includes(p.id)}" onclick="toggleFav('${p.id}')">${favorites.includes(p.id)?'♥':'♡'}</button><button class="place-open" onclick="openPlace('${p.id}')"><div class="photo"><span class="photo-fallback">${p.type==='spa'?'🌿':'🍜'}</span><img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)} 분위기 참고 이미지" loading="lazy" onerror="this.style.visibility='hidden'"><span class="rank">${p.badge}</span></div><div class="place-body"><div class="place-loc">${escapeHTML(p.loc)}</div><h3>${escapeHTML(p.short)}</h3><div class="price">${escapeHTML(p.price)}<small>${p.type==='spa'?'90분 기준':'메뉴 기준'}</small></div><div class="pills">${p.tags.map(t=>`<span class="pill">${escapeHTML(t)}</span>`).join('')}</div></div></button></article>`}
+function card(p){return `<article class="place"><button class="heart ${favorites.includes(p.id)?'liked':''}" aria-label="${escapeHTML(p.name)} 찜 ${favorites.includes(p.id)?'해제':'추가'}" aria-pressed="${favorites.includes(p.id)}" onclick="toggleFav('${p.id}')">${favorites.includes(p.id)?'♥':'♡'}</button><button class="place-open" onclick="openPlace('${p.id}')"><div class="photo"><span class="photo-fallback">${p.type==='spa'?'🌿':'🍜'}</span><img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.name)} 분위기 참고 이미지" loading="lazy" onerror="this.style.visibility='hidden'"><span class="rank">${p.badge}</span></div><div class="place-body"><div class="place-loc">${escapeHTML(p.loc)}</div><h3>${escapeHTML(p.short)}</h3><div class="price">${escapeHTML(p.price)}<small>${p.type==='spa'?'90분 기준':'메뉴 기준'}</small></div><div class="pills">${p.tags.map(t=>`<span class="pill">${escapeHTML(t)}</span>`).join('')}</div>${placeReviewPreview(p)}</div></button></article>`}
 function renderCards(){ $('homeSpa').innerHTML=places.filter(p=>p.type==='spa').slice(0,4).map(card).join('');$('homeDining').innerHTML=places.filter(p=>p.type==='dining').slice(0,4).map(card).join('');$('savedCount').textContent=favorites.length;if(['spa','dining','favs'].includes(currentTab))renderList()}
 function toggleFav(id){if(favorites.includes(id)){favorites=favorites.filter(x=>x!==id);toast('찜 목록에서 뺐어요')}else{favorites.push(id);toast('여행 목록에 쏙, 저장했어요 ♡')}try{localStorage.setItem('tripfact-favs-v1',JSON.stringify(favorites))}catch{toast('이 브라우저에서는 이번 방문 동안만 저장돼요')}renderCards()}
 function switchTab(tab){currentTab=tab;listFilter='전체';$('homePage').classList.toggle('hidden',tab!=='home');$('marketPage').classList.toggle('hidden',tab!=='market');$('listPage').classList.toggle('hidden',!['spa','dining','favs'].includes(tab));document.querySelectorAll('[data-tab]').forEach(b=>{b.classList.toggle('active',b.dataset.tab===tab);if(b.closest('nav')){if(b.dataset.tab===tab)b.setAttribute('aria-current','page');else b.removeAttribute('aria-current')}});if(['spa','dining','favs'].includes(tab))renderList();window.scrollTo({top:0,behavior:'instant'})}
@@ -356,8 +367,7 @@ function changeDirectory(key,value){directory[key]=value;if(key==='group'){direc
 function directorySelect(id,key,label,values){return `<label for="${id}"><span>${label}</span><select id="${id}" onchange="changeDirectory('${key}',this.value)">${values.map(([v,t])=>`<option value="${v}" ${directory[key]===v?'selected':''}>${t}</option>`).join('')}</select></label>`}
 function renderDirectoryControls(){const beauty=directory.group==='beauty',cats=beauty?['마사지','네일','이발관']:['맛집','카페'];$('listTitle').textContent=beauty?'뷰티 / 미용 🌿':'맛집 / 카페 🍜';$('listEyebrow').textContent='FIND YOUR LITTLE FAVORITES';$('listDesc').textContent='지역과 조건을 골라 한눈에 비교해 보세요.';$('listFilters').innerHTML=`<div class="directory-groups" role="group" aria-label="업체 분야"><button class="${beauty?'active':''}" onclick="changeDirectory('group','beauty')">🌿 뷰티 / 미용</button><button class="${!beauty?'active':''}" onclick="changeDirectory('group','food')">🍜 맛집 / 카페</button></div><div class="directory-cats" role="group" aria-label="업종">${cats.map(c=>`<button class="${directory.category===c?'active':''}" onclick="changeDirectory('category','${c}')">${c}</button>`).join('')}</div><div class="directory-regions" role="group" aria-label="지역">${['전체','한시장','미케비치','호이안'].map(r=>`<button class="${directory.region===r?'active':''}" onclick="changeDirectory('region','${r}')">${r==='전체'?'📍 지역 전체':r}</button>`).join('')}</div><label class="directory-search" for="placeQuery"><span>⌕</span><input id="placeQuery" value="${escapeHTML(directory.query)}" placeholder="업체명 검색" oninput="directory.query=this.value;renderDirectoryRows()" type="search"></label><div class="directory-selects">${directorySelect('priceFilter','budget','금액 · 동',[['all','금액 전체'],['under100','10만 동 미만'],['100to500','10만~50만 동 미만'],['500to600','50만~60만 동 미만'],['over600','60만 동 이상']])}${directorySelect('pickupFilter','pickup','픽업 여부',[['all','픽업 전체'],['yes','픽업·샌딩 지원'],['no','픽업 미지원']])}${directorySelect('sortFilter','sort','정렬',[['default','기본순'],['low','가격 낮은순'],['high','가격 높은순']])}</div><div class="directory-result"><span id="directoryCount" role="status" aria-live="polite"></span><button onclick="resetDirectoryFilters()">필터 초기화 ↺</button></div><p class="directory-note">가격은 원본 기준 · 마사지 90분 / 음식은 표시 메뉴의 최저가로 비교합니다. 픽업 조건은 상세에서 확인해 주세요.</p>`;$('listFilters').classList.add('directory-controls')}
 function resetDirectoryFilters(){directory={...directory,region:'전체',budget:'all',pickup:'all',sort:'default',query:''};renderDirectoryControls();renderDirectoryRows()}
-function renderDirectoryRows(){let rows=places.filter(p=>p.category===directory.category);if(directory.region!=='전체')rows=rows.filter(p=>placeRegions[p.id]===directory.region);if(directory.query.trim())rows=rows.filter(p=>p.name.toLowerCase().includes(directory.query.trim().toLowerCase()));if(directory.pickup!=='all')rows=rows.filter(p=>hasPickup(p)===(directory.pickup==='yes'));if(directory.budget!=='all')rows=rows.filter(p=>{const n=minimumPrice(p);if(n===null)return false;return directory.budget==='under100'?n<100000:directory.budget==='100to500'?n>=100000&&n<500000:directory.budget==='500to600'?n>=500000&&n<600000:n>=600000});if(directory.sort!=='default')rows.sort((a,b)=>directory.sort==='low'?(minimumPrice(a)??Infinity)-(minimumPrice(b)??Infinity):(minimumPrice(b)??-Infinity)-(minimumPrice(a)??-Infinity));$('directoryCount').textContent=`${directory.category} · ${rows.length}개 업체`;$('listCards').classList.add('compact-directory');const zone=({마사지:'massage',네일:'nail',이발관:'barber',맛집:'dining',카페:'cafe'})[directory.category];$('listCards').innerHTML=adSlot(zone,true)+(rows.length?rows.slice(0, directoryPageSize).map(p=>`<article class="directory-row"><button class="directory-open" onclick="openPlace('${p.id}')"><div class="directory-thumb"><img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.short)} 분위기 참고" loading="lazy" onerror="this.style.visibility='hidden'"></div><div class="directory-info"><span class="directory-location">${escapeHTML(placeRegions[p.id]||p.loc)} · ${escapeHTML(p.category)}</span><h3>${escapeHTML(p.short)}</h3><div class="directory-price">${escapeHTML(p.price)} <small>${p.type==='spa'?'90분':'메뉴 기준'}</small></div>${p.type === 'dining' ? `<div class="directory-tags" style="white-space:normal;line-height:1.5">${p.reviewHighlight ? '<strong>방문 포인트</strong> ' + escapeHTML(p.reviewHighlight) : '후기 분석 준비 중'}${p.reviewEvidence?.length ? ' · 근거 ' + p.reviewEvidence.length + '건' : ''}</div>` :
-        `<div class="directory-tags">${hasPickup(p)?'🚗 픽업·샌딩 지원':'픽업 미지원'} <span>· ${escapeHTML(p.tags[0])}</span></div>`}</div></button><button class="directory-heart" aria-label="${escapeHTML(p.short)} 찜" aria-pressed="${favorites.includes(p.id)}" onclick="toggleFav('${p.id}')">${favorites.includes(p.id)?'♥':'♡'}</button></article>`).join(''):`<div class="empty"><span>🥥</span><h3>조건에 맞는 업체가 없어요</h3><p>${['네일','이발관','카페'].includes(directory.category)?'이 업종의 매장 정보는 아직 준비 중이에요.':'다른 지역이나 금액 조건으로 찾아보세요.'}</p><button class="primary" onclick="resetDirectoryFilters()">필터 초기화</button></div>`)}
+function renderDirectoryRows(){let rows=places.filter(p=>p.category===directory.category);if(directory.region!=='전체')rows=rows.filter(p=>placeRegions[p.id]===directory.region);if(directory.query.trim())rows=rows.filter(p=>p.name.toLowerCase().includes(directory.query.trim().toLowerCase()));if(directory.pickup!=='all')rows=rows.filter(p=>hasPickup(p)===(directory.pickup==='yes'));if(directory.budget!=='all')rows=rows.filter(p=>{const n=minimumPrice(p);if(n===null)return false;return directory.budget==='under100'?n<100000:directory.budget==='100to500'?n>=100000&&n<500000:directory.budget==='500to600'?n>=500000&&n<600000:n>=600000});if(directory.sort!=='default')rows.sort((a,b)=>directory.sort==='low'?(minimumPrice(a)??Infinity)-(minimumPrice(b)??Infinity):(minimumPrice(b)??-Infinity)-(minimumPrice(a)??-Infinity));$('directoryCount').textContent=`${directory.category} · ${rows.length}개 업체`;$('listCards').classList.add('compact-directory');const zone=({마사지:'massage',네일:'nail',이발관:'barber',맛집:'dining',카페:'cafe'})[directory.category];$('listCards').innerHTML=adSlot(zone,true)+(rows.length?rows.slice(0, directoryPageSize).map(p=>`<article class="directory-row"><button class="directory-open" onclick="openPlace('${p.id}')"><div class="directory-thumb"><img src="${escapeHTML(p.image)}" alt="${escapeHTML(p.short)} 분위기 참고" loading="lazy" onerror="this.style.visibility='hidden'"></div><div class="directory-info"><span class="directory-location">${escapeHTML(placeRegions[p.id]||p.loc)} · ${escapeHTML(p.category)}</span><h3>${escapeHTML(p.short)}</h3><div class="directory-price">${escapeHTML(p.price)} <small>${p.type==='spa'?'90분':'메뉴 기준'}</small></div>${p.type === 'dining' ? '' : `<div class="directory-tags">${hasPickup(p)?'🚗 픽업·샌딩 지원':'픽업 미지원'} <span>· ${escapeHTML(p.tags[0])}</span></div>`}${placeReviewPreview(p)}</div></button><button class="directory-heart" aria-label="${escapeHTML(p.short)} 찜" aria-pressed="${favorites.includes(p.id)}" onclick="toggleFav('${p.id}')">${favorites.includes(p.id)?'♥':'♡'}</button></article>`).join(''):`<div class="empty"><span>🥥</span><h3>조건에 맞는 업체가 없어요</h3><p>${['네일','이발관','카페'].includes(directory.category)?'이 업종의 매장 정보는 아직 준비 중이에요.':'다른 지역이나 금액 조건으로 찾아보세요.'}</p><button class="primary" onclick="resetDirectoryFilters()">필터 초기화</button></div>`)}
 function renderDirectory(){renderDirectoryControls();renderDirectoryRows()}
 const switchBeforeDirectory=switchTab;switchTab=function(tab){$('listFilters').classList.remove('directory-controls');$('listCards').classList.remove('compact-directory');switchBeforeDirectory(tab);if(['explore','spa','dining'].includes(tab)){if(tab==='spa')directory={...directory,group:'beauty',category:'마사지',region:'전체',budget:'all',pickup:'all',query:''};if(tab==='dining')directory={...directory,group:'food',category:'맛집',region:'전체',budget:'all',pickup:'all',query:''};$('listPage').classList.remove('hidden');renderDirectory()}};
 renderExplore=renderDirectory;
@@ -533,6 +543,11 @@ renderShopCategories();renderShopResults();
  } catch {}
 })();
 </script><script>let directoryPageSize = 25;
+function placeReviewPreview(place) {
+  const first = place.reviewEvidence?.[0];
+  if (!first) return '';
+  return `<div class="place-review-preview"><strong>후기 ${place.reviewEvidence.length}건</strong> · ${escapeHTML(first.summary)}</div>`;
+}
 (() => {
   const data = danangSheet;
   const dataStatus = document.createElement('small');
@@ -627,20 +642,29 @@ renderShopCategories();renderShopResults();
     const detail = $('shopDetail');
     detail.querySelectorAll('.shop-range-demo, .shop-single-reference').forEach(node => node.remove());
     const groups = data.stats[id] || [];
+    const ref = product.reference;
+    const priceCard = detail.querySelector('.shop-range');
+    const referenceDetails = ref
+      ? [escapeHTML(ref.description), escapeHTML(ref.date), link(ref.source, '출처 보기')].filter(Boolean).join(' · ')
+      : '';
     if (groups.length) {
-      detail.querySelector('.shop-range').innerHTML = groups.map(group =>
+      priceCard.innerHTML = groups.map(group =>
         `<small>${group.n < 3 ? '수집 가격 사례 · 표본 부족' : '수집 가격 범위'}</small>
         <strong>${bounds(group)}</strong><p>${escapeHTML(group.unit)}당 · 표본 ${group.n}건 ·
         ${escapeHTML(group.start)} ~ ${escapeHTML(group.end)}</p>`).join('');
+    } else if (ref) {
+      priceCard.innerHTML = `<small>참고 가격 사례</small><strong>${bounds(ref)}</strong>
+        ${referenceDetails ? '<p>' + referenceDetails + '</p>' : ''}`;
+    } else {
+      priceCard.innerHTML = '<small>가격 확인 상태</small><strong>확인된 가격 없음</strong><p>상품의 규격과 금액이 함께 확인된 자료를 확보하면 표시합니다.</p>';
     }
     detail.querySelector('.shop-data-meta').textContent = groups.length
       ? '출처 · 구글시트 쇼핑웹요약'
-      : '비교 단위가 확인된 VND 가격 표본 없음';
-    if (product.reference) {
-      const ref = product.reference;
-      detail.querySelector('.shop-range').insertAdjacentHTML('afterend',
+      : ref ? '개별 참고가격 · 시세 비교에 필요한 표본 수집 중' : '비교 단위가 확인된 VND 가격 표본 없음';
+    if (ref && groups.length) {
+      priceCard.insertAdjacentHTML('afterend',
         `<section class="shop-single-reference"><b>참고 사례 · ${bounds(ref)}</b>
-        <p>${escapeHTML(ref.description)} · ${escapeHTML(ref.date)} ${link(ref.source, '출처 보기')}</p></section>`);
+        ${referenceDetails ? '<p>' + referenceDetails + '</p>' : ''}</section>`);
     }
   };
   renderCards();
