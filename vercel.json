@@ -1,3 +1,8 @@
 {
-  "rewrites": [{ "source": "/", "destination": "/api/catalog" }]
+  "rewrites": [{ "source": "/", "destination": "/api/catalog" }],
+  "functions": {
+    "api/catalog.py": {
+      "includeFiles": "catalog-template.html"
+    }
+  }
 }
