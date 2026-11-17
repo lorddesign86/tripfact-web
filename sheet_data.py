@@ -185,7 +185,7 @@ def build_snapshot(tables):
     for row in tables['쇼핑웹요약']:
         n = amount(row.get('표본수', '')) or 0
         low, high = amount(row.get('최저', '')), amount(row.get('최고', ''))
-        if row.get('통화') != 'VND' or n < 3 or not low or not high or high < low or not row.get('비교단위'):
+        if row.get('통화') != 'VND' or n < 1 or not low or not high or high < low or not row.get('비교단위'):
             continue
         stats[row['품목ID']].append(dict(low=low, high=high, n=n, unit=row['비교단위'],
             start=row.get('기간시작(글 작성일)', ''), end=row.get('기간끝(글 작성일)', '')))
