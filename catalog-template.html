@@ -140,6 +140,11 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .community-meta { display:flex;gap:5px 12px;justify-content:space-between;flex-wrap:wrap;font-size:13px; }
 .community-meta span,.community-comment small { color:#708077;font-size:12px; }
 .community-tag { display:inline-block;background:#edf3e5;color:#3f7057;border-radius:8px;padding:4px 8px;margin-top:12px;font-size:12px; }
+.community-categories { display:flex;gap:8px;margin:16px 0 5px;flex-wrap:wrap; }
+.community-categories button { padding:9px 16px;border-radius:22px;background:#edf3e5; }
+.community-categories [aria-pressed=true],.community-tools [aria-pressed=true] { background:#21846d;color:white; }
+.community-sort { font-size:12px;color:#708077;margin:8px 0; }
+.community-composer [name=room] { display:inline-block;width:auto;margin-right:6px; }
 .community-card h2 { font-size:18px;margin:10px 0; }
 .community-body,.community-comment p { white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7; }
 .community-preview { display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:5;overflow:hidden; }
@@ -156,7 +161,155 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .community-empty>span { font-size:40px; }.community-empty h2 { font-size:19px; }
 .community-status { color:#7b5435;overflow-wrap:anywhere; }
 .community-admin-rules { margin:12px 0; }.community-admin-rules textarea { display:block;width:100%;margin:10px 0; }
+.home-community-boards { display:grid;grid-template-columns:minmax(0,1fr);gap:14px;margin:20px 0; }
+.home-community-board { min-width:0;padding:18px; }
+.home-community-board .section-head { margin-bottom:5px; }
+.home-community-board .section-head h2 { font-size:18px; }
+.home-community-board .more { white-space:nowrap; }
+.home-community-row { display:flex;align-items:center;gap:12px;width:100%;text-align:left;padding:12px 0;border-bottom:1px solid var(--line); }
+.home-community-row:last-child { border-bottom:0; }
+.home-community-text { flex:1;min-width:0; }
+.home-community-text b { display:block;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:15px;line-height:1.5; }
+.home-community-text small { display:block;margin-top:3px;font-size:12px;color:#708077;line-height:1.5; }
+.home-community-comments { flex:none;font-size:12px;color:#61756a; }
 @media(max-width:500px){.community-heading{align-items:flex-start}.community-heading h1{font-size:25px}.community-heading p{font-size:13px}.community-heading>.primary{padding:10px;white-space:nowrap}.community-card{padding:15px}.community-tools{gap:6px}.community-tools select{max-width:150px}}
+.community-page { background:#fff;padding:22px 24px 100px; }
+.community-heading { margin-bottom:8px;align-items:center; }
+.community-heading h1 { font-size:28px;color:#232b28;letter-spacing:-1px; }
+.community-options,.community-post-menu { position:relative; }
+.community-options summary,.community-post-menu summary { list-style:none;cursor:pointer;padding:8px;font-size:22px;color:#6d746f;line-height:1; }
+.community-options summary::-webkit-details-marker,.community-post-menu summary::-webkit-details-marker { display:none; }
+.community-options>summary::after,.community-post-menu>summary::after { content:none !important; }
+.community-options>div,.community-post-menu>div { position:absolute;right:0;top:100%;z-index:25;min-width:160px;padding:6px;background:#fff;border:1px solid #e5e9e5;border-radius:12px;box-shadow:0 6px 22px #182c2414; }
+.community-options>div button,.community-post-menu>div button { display:block;width:100%;text-align:left;white-space:nowrap;padding:11px;font-size:14px;border:0;background:#fff; }
+.community-categories { margin:0;gap:24px;border-bottom:1px solid #eceeeb;flex-wrap:nowrap;overflow-x:auto; }
+.community-categories button { border-radius:0;background:transparent;padding:15px 0 12px;white-space:nowrap;color:#929792;font-size:18px;font-weight:750;border-bottom:3px solid transparent; }
+.community-categories [aria-pressed=true] { color:#193f32;background:transparent;border-bottom-color:#21846d; }
+.community-tools { justify-content:space-between;align-items:center;margin:14px 0 8px; }
+.community-tools label { font-size:0; }
+.community-tools select { margin:0;font-size:14px;font-weight:650;border:0;background:#f3f5f2;border-radius:20px;padding:9px 14px; }
+.community-sort { margin:0;color:#8a938c; }
+.community-status:empty { display:none; }
+.community-feed-row { padding:20px 0 16px;border-bottom:1px solid #eceeeb; }
+.community-post-open { display:block;width:100%;padding:0;text-align:left;background:transparent;border:0;color:#252d28; }
+.community-feed-category { display:inline-block;border-radius:5px;background:#f1f3f0;color:#69736a;font-size:12px;padding:4px 7px; }
+.community-post-open h2 { margin:10px 0 6px;font-size:18px;font-weight:750;line-height:1.5;letter-spacing:-.35px;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden; }
+.community-post-open p { margin:0;color:#737b75;font-size:14px;line-height:1.6;overflow-wrap:anywhere;display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:1;overflow:hidden; }
+.community-feed-footer { display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:12px; }
+.community-feed-footer>span { font-size:12px;color:#929992; }
+.community-feed-footer .community-actions { margin:0;gap:2px;flex-wrap:nowrap;align-items:center; }
+.community-feed-footer .community-actions>button { font-size:12px;background:transparent;border:0;padding:6px 4px;color:#7e8d82;white-space:nowrap; }
+.community-feed-footer .community-post-menu summary { padding:6px;font-size:20px; }
+.community-compose-fab { position:fixed;right:max(20px,calc((100vw - 760px)/2 + 20px));bottom:calc(88px + env(safe-area-inset-bottom));z-index:45;border-radius:28px;padding:14px 20px;font-size:16px;box-shadow:0 6px 20px #14574030; }
+.community-page:has([data-writer] form) .community-compose-fab { display:none; }
+@media(max-width:500px){.community-page{padding:16px 16px 100px;margin-inline:-4px}.community-heading h1{font-size:26px}.community-categories{gap:22px}.community-categories button{font-size:17px}.community-feed-row{padding:18px 0 14px}.community-compose-fab{right:18px}}
+
+#eventPosts { display:grid;grid-template-columns:minmax(0,1fr);gap:12px; }
+#eventsPage { max-width:900px;margin-inline:auto; }
+#eventsPage>.subtitle { font-size:14px; }
+#eventsPage .vendor-title h1 { font-size:28px; }
+#eventsPage .vendor-title>.primary { font-size:14px; }
+#eventFilters { flex-wrap:nowrap;overflow-x:auto;padding-bottom:5px; }
+#eventFilters button { flex:none;white-space:nowrap;font-size:14px; }
+.hotdeal-card { padding:16px;margin:0;min-width:0; }
+.hotdeal-main { display:grid;grid-template-columns:145px minmax(0,1fr);gap:18px; }
+.hotdeal-no-image { grid-template-columns:minmax(0,1fr); }
+.hotdeal-cover { width:100%;aspect-ratio:4/5;object-fit:contain;background:#f4f5ef;border-radius:10px; }
+.hotdeal-info { min-width:0;display:flex;flex-direction:column;align-items:flex-start;gap:6px; }
+.hotdeal-info .hotdeal-business { font-size:12px;color:#6a7a6d;overflow-wrap:anywhere; }
+.hotdeal-info h2 { font-size:20px;line-height:1.4;margin:0;overflow-wrap:anywhere; }
+.hotdeal-appeal { color:#21846d;font-size:14px;font-weight:700;margin:0;overflow-wrap:anywhere; }
+.hotdeal-info .hotdeal-summary { display:-webkit-box;-webkit-box-orient:vertical;-webkit-line-clamp:2;overflow:hidden;font-size:13px;line-height:1.5;margin:0; }
+.hotdeal-period { color:#75826e;font-size:11px; }
+.hotdeal-kakao { display:inline-block;background:#fee500;color:#302c1a;padding:8px 12px;border-radius:9px;font-size:13px;font-weight:750;text-decoration:none; }
+.hotdeal-details { margin-top:12px;border-top:1px solid #e3e9dc;padding-top:8px; }
+.hotdeal-details summary { cursor:pointer;color:#66836b;font-size:12px; }
+.hotdeal-details .live-event-photos { display:flex;flex-direction:column; }
+.hotdeal-details .live-event-photos img { width:100%;max-height:none;object-fit:contain; }
+.hotdeal-dates { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px;margin:12px 0; }
+.hotdeal-dates label { min-width:0; }.hotdeal-dates input { display:block;width:100%;margin-top:5px;min-width:0; }
+.home-business-entry { display:flex;align-items:center;justify-content:space-between;gap:16px;background:#eef4e7;border:1px solid #dbe6d1;border-radius:15px;padding:18px;margin:16px 0; }
+.home-business-entry strong { font-size:16px; }.home-business-entry p { margin:5px 0 0;font-size:12px;color:#6a7e68; }
+.home-business-actions { display:flex;gap:8px;flex-wrap:wrap; }.home-business-actions button { font-size:13px; }
+@media(max-width:600px){.hotdeal-main{grid-template-columns:110px minmax(0,1fr);gap:12px}.hotdeal-no-image{grid-template-columns:minmax(0,1fr)}.hotdeal-card{padding:13px!important}.hotdeal-info h2{font-size:16px}.hotdeal-appeal{font-size:12px}.hotdeal-info .hotdeal-summary{font-size:12px}.hotdeal-info{gap:5px}.hotdeal-kakao{font-size:12px;padding:8px 10px}.home-business-entry{align-items:flex-start;flex-direction:column;padding:15px}.home-business-actions{width:100%}.home-business-actions button{flex:1}#eventsPage .vendor-title h1{font-size:24px}#eventsPage .vendor-title>.primary{font-size:12px}}
+
+.home-exchange-calculator { grid-column:1/-1; }
+#homePage>.page-head { order:0; }
+#homePage>.tools-grid { order:1; }
+#homePage>.hero { order:2; }
+#homePage>.travel-note { order:3; }
+#homePage>.home-business-entry { order:4; }
+#homePage>.ad-placement-group { order:5; }
+#homePage>.home-community-boards { order:8; }
+.home-exchange-calculator h2 { font-size:16px;margin:0 0 10px; }
+.home-exchange-calculator .calc-mini { display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,1fr);gap:8px 14px;align-items:center;margin:0; }
+.home-exchange-calculator label { grid-column:1/-1;font-size:12px!important; }
+.home-exchange-calculator input { width:100%;min-width:0;margin:0; }
+.home-exchange-calculator output { font-size:23px;font-weight:800;color:#21846d;overflow-wrap:anywhere; }
+.home-exchange-calculator .vendor-help { margin:8px 0 0;font-size:11px; }
+@media(max-width:760px){
+  .tools-grid { grid-template-columns:minmax(0,1fr)!important;gap:10px!important;align-items:start; }
+  .tools-grid>.panel { padding:13px!important;min-height:0!important;height:auto!important; }
+  .home-weather-panel { order:10; }
+  #weatherExpanded { order:11; }
+  .home-exchange-panel { order:20; }
+  #exchangeExpanded { order:21; }
+  .home-exchange-calculator { order:30; }
+  .home-weather-panel .section-head { margin-bottom:5px; }
+  .home-weather-panel .section-head p { display:none; }
+  .home-weather-panel .section-head>span { display:none; }
+  .home-weather-panel .weather-overview { display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:0;margin:6px 0; }
+  .home-weather-panel .weather-overview li { display:flex;flex-direction:column;align-items:center;text-align:center;gap:4px;padding:6px;border-bottom:0;border-right:1px solid var(--line);min-width:0; }
+  .home-weather-panel .weather-overview li:last-child { border-right:0; }
+  .home-weather-panel .weather-overview b { font-size:12px; }
+  .home-weather-panel .weather-overview strong { font-size:17px; }
+  .home-weather-panel .weather-overview small { font-size:10px;overflow-wrap:anywhere; }
+  .home-weather-panel .source-label { font-size:9px;margin:5px 0;overflow-wrap:anywhere; }
+  .home-weather-panel .weather-details { margin-top:5px; }
+  .tools-grid .section-head h2 { font-size:14px!important; }
+  .home-exchange-panel .section-head { margin-bottom:8px; }
+  .home-exchange-panel .section-head p { font-size:10px; }
+  .home-exchange-panel .rate-feature { display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:5px 10px;padding:10px; }
+  .home-exchange-panel .rate-feature>small,.home-exchange-panel .rate-feature>.large,.home-exchange-panel .rate-feature>.samples { grid-column:1/-1; }
+  .home-exchange-panel .rate-feature .large { font-size:24px!important;line-height:1.3;margin:0; }
+  .home-exchange-panel .rate-line { min-width:0;padding:6px 0;display:flex;flex-direction:column;align-items:flex-start;gap:3px;font-size:12px; }
+  .home-exchange-panel .rate-line strong { font-size:13px; }
+  .home-exchange-panel .rate-feature .samples { font-size:9px;margin:0; }
+  .home-exchange-panel .rate-details { margin-top:7px; }
+  .tools-grid .weather-details summary,.tools-grid .rate-details summary { font-size:11px!important; }
+  .home-exchange-calculator .calc-mini { grid-template-columns:minmax(0,1fr) minmax(0,1.15fr); }
+  .home-exchange-calculator output { font-size:20px; }
+  .home-weather-panel .weather-overview { margin:3px 0; }
+  .home-weather-panel .weather-overview li { padding:4px; }
+  .home-weather-panel .source-label { margin:2px 0; }
+  .home-weather-panel .weather-details { margin-top:2px; }
+  .tools-grid .weather-details summary,.tools-grid .rate-details summary { padding:2px 0!important;min-height:0;line-height:1.5; }
+  .home-exchange-panel .rate-feature { gap:3px 9px; }
+  .home-exchange-panel .rate-line { min-height:0!important;padding:4px 0;line-height:1.3; }
+  .home-exchange-panel .rate-feature>small { font-size:10px;line-height:1.4; }
+  .home-exchange-panel .rate-line>div,.home-exchange-panel .rate-line strong { line-height:1.3; }
+  .home-exchange-calculator h2 { font-size:14px;line-height:20px;margin-bottom:5px; }
+  .home-exchange-calculator label { position:absolute;width:1px;height:1px;padding:0;overflow:hidden;clip-path:inset(50%);white-space:nowrap; }
+  .home-exchange-calculator .vendor-help { font-size:10px;line-height:1.4;margin-top:5px; }
+}
+
+.ad-placement-group { display:grid!important;grid-template-columns:minmax(0,1fr);gap:8px;padding:0!important;margin:14px 0;border:0!important;background:transparent!important; }
+.ad-placement-group .ad-placement { display:flex;flex-direction:row;align-items:center;justify-content:space-between;gap:10px;background:#f1f5e9;border:1px dashed #cbdcbb;border-radius:12px;padding:11px 13px; }
+.ad-placement-group .ad-placement small { font-size:10px;color:#7d8c74; }
+.ad-placement-group .ad-placement strong { display:block;font-size:13px;margin-top:3px;color:#456a4e; }
+.ad-placement-group .ad-placement button { flex:none;font-size:12px;padding:8px 11px; }
+.ad-placement-group.ad-disabled { display:none!important; }
+.ad-visibility-controls { display:flex;gap:8px;margin:10px 0; }.ad-visibility-controls button { padding:8px 12px;border:1px solid #dbe4d4;border-radius:8px; }
+.ad-visibility-row { display:flex;align-items:center;justify-content:space-between;gap:12px;padding:11px 0;border-bottom:1px solid #e2e8de;font-size:14px; }
+.ad-visibility-row input { width:20px;height:20px;accent-color:#21846d; }
+.ad-placement-group .ad-placement { border-style:solid;padding:12px;justify-content:flex-start; }
+.ad-example-icon { display:grid;place-items:center;flex:none;width:54px;height:58px;border-radius:12px;background:#ffffffa6;font-size:29px; }
+.ad-example-copy { flex:1;min-width:0; }.ad-example-copy p { margin:4px 0 0;font-size:11px;line-height:1.4;color:#71816a; }
+.ad-placement-group .ad-example-sand { background:#fcf2df;border-color:#ecdfc5; }
+.ad-placement-group .ad-example-pink { background:#fbefef;border-color:#ead8d8; }
+.ad-placement-group .ad-example-mint { background:#eaf4e9;border-color:#cfe3ce; }
+.ad-placement-group .ad-placement strong { font-size:14px;line-height:1.4; }
+@media(max-width:400px){.ad-placement-group .ad-placement{gap:8px;padding:10px}.ad-example-icon{width:44px;height:52px;font-size:25px}.ad-placement-group .ad-placement strong{font-size:13px}.ad-placement-group .ad-placement small{font-size:9px}.ad-placement-group .ad-placement button{padding:7px;font-size:11px}}
 </style></head>
 <body>
 <div class="top"><header class="wrap header"><a class="brand" href="#home" aria-label="트립팩트 홈"><span class="brand-icon">🌴</span><div><strong>다낭 트립팩트<span style="color:#e6a56b">.</span></strong><small>YOUR LITTLE TRAVEL BUDDY</small></div></a><nav class="desktop-nav" aria-label="주 메뉴"><button data-tab="home" class="active">여행 홈</button><button data-tab="market">쇼핑시세</button><button data-tab="spa">케어 & 뷰티</button><button data-tab="dining">맛집 & 카페</button></nav><button class="saved-top" data-tab="favs">♡ 내 찜 <b id="savedCount">0</b></button></header></div>
@@ -745,6 +898,19 @@ function placeReviewPreview(place) {
 
 (() => {
   const names = ['김옌', '김가', '손하', '공항'];
+  const grid=document.querySelector('.tools-grid');
+  const weatherPanel=$('weatherDetails').closest('.panel');weatherPanel.classList.add('home-weather-panel');
+  $('exchange').closest('.panel').classList.add('home-exchange-panel');
+  const calculator=document.createElement('section');calculator.className='panel home-exchange-calculator';
+  calculator.innerHTML='<h2>환전 계산기</h2><div data-exchange-calculator></div><p class="vendor-help">금은방 평균 기준 예상 금액 · 실제 환전액과 다를 수 있어요.</p>';
+  grid.append(calculator);
+  calculateExchange=function(){
+    const input=$('exchangeAmount'),output=$('exchangeOutput'),amount=Number(input.value);
+    const rate=rateData.rates.find(r=>r.currency===currency&&r.category==='금은방'&&r.posts>0&&Number.isFinite(r.mean_vnd)&&r.nominal>0);
+    if(!input.value.trim()||!Number.isFinite(amount)||amount<0){output.textContent='환전할 금액을 입력해 주세요.';return;}
+    const result=rate?amount/rate.nominal*rate.mean_vnd:null;
+    output.textContent=result!==null&&Number.isFinite(result)?'약 '+fmt(result)+' 동': '계산 가능한 금은방 환율 자료가 없습니다.';
+  };
   const previousSetCurrency = setCurrency;
   setCurrency = function (selected) {
     previousSetCurrency(selected);
@@ -772,6 +938,15 @@ function placeReviewPreview(place) {
       '<p class="rate-foot">계산기는 금은방 전체 평균을 사용합니다. 환전소 이름을 확인할 수 있는 글만 위 업체별 평균에 포함합니다.</p>');
     const airport = [...details.querySelectorAll('.rate-line')].find(row => row.firstElementChild.textContent.trim().startsWith('공항'));
     airport?.remove();
+    const calc=details.querySelector('.calc-mini');
+    calc.querySelector('input').value=selected==='USD'?'100':'50000';
+    calculator.querySelector('[data-exchange-calculator]').replaceChildren(calc);
+    calc.querySelector('label').textContent=selected==='USD'?'환전할 달러 (USD)':'환전할 원화 (KRW)';
+    $('exchangeAmount').setAttribute('inputmode','decimal');
+    $('exchangeAmount').step=selected==='USD'?'0.01':'1';
+    $('exchangeOutput').setAttribute('aria-live','polite');
+    document.querySelector('.rate-details summary').textContent='환율 집계 기준 자세히 보기';
+    calculateExchange();
   };
   const goldAvailable = code => rateData.rates.some(row =>
     row.currency === code && row.category === '금은방' && row.posts > 0 && Number.isFinite(row.mean_vnd));
@@ -1125,6 +1300,182 @@ function renderAdminMembers(container, queryMembers) {
   load();
 }
 
+function installLiveEvents({connect, checked, accountState, showPage, updateMemberHeader}) {
+  const bucket = 'tripfact-event-photos';
+  const categories = ['쇼핑','환전','여행서비스','맛집','카페','마사지','네일','이발관'];
+  const writer = $('eventWriter');
+  const posts = $('eventPosts');
+  let filter = '전체';
+  let listingVersion = 0;
+  let listLimit=30;
+  const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
+  document.querySelector('#eventsPage .eyebrow')?.remove();
+  document.querySelector('#eventsPage h1').textContent='다낭 핫딜 🎁';
+  document.querySelector('#eventsPage .vendor-title button').textContent='핫딜 등록';
+  document.querySelector('#eventsPage .subtitle').textContent='여행 중 쓸 수 있는 매장 혜택을 확인하세요.';
+  document.querySelector('#eventsPage > .sponsor-disclaimer').textContent = '광고 · 업체가 직접 등록한 유료 프로모션입니다.';
+
+  function inquiryLink(value) {
+    const text = String(value || '').trim();
+    try {
+      const url = new URL(text);
+      if (url.protocol==='https:' && (url.hostname==='kakao.com'||url.hostname.endsWith('.kakao.com')) && !url.username && !url.password) return url.href;
+    } catch {}
+    return '';
+  }
+
+  renderEvents = async function () {
+    const version = ++listingVersion;
+    $('eventFilters').replaceChildren(...['전체', ...categories].map(category => {
+      const control = document.createElement('button');
+      control.textContent = category;
+      control.classList.toggle('active', category === filter);
+      control.onclick = () => { filter = category;listLimit=30; renderEvents(); };
+      return control;
+    }));
+    posts.textContent = '핫딜을 불러오는 중…';
+    try {
+      await connect();
+      const {client} = accountState();
+      let query = client.from('tripfact_events').select('id,business_name,category,title,body,appeal,inquiry_url,image_paths,created_at,starts_on,ends_on')
+        .eq('city_slug','danang').gte('ends_on',today()).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(listLimit+1);
+      if (filter !== '전체') query = query.eq('category',filter);
+      const rows = await checked(query);
+      if (version !== listingVersion) return;
+      posts.replaceChildren();
+      if (!rows.length) posts.textContent = '등록된 핫딜이 없습니다. 새로운 혜택이 등록되면 이곳에 표시됩니다.';
+      for (const post of rows.slice(0,listLimit)) {
+        const article = document.createElement('article');
+        article.className = 'panel event-post hotdeal-card';
+        const main=document.createElement('div');main.className='hotdeal-main';
+        const info=document.createElement('div');info.className='hotdeal-info';
+        const heading = document.createElement('h2');
+        heading.textContent = post.title;
+        const metadata = document.createElement('small');
+        metadata.className='hotdeal-business';metadata.textContent=post.business_name+' · '+post.category;
+        const content = document.createElement('p');
+        content.className = 'event-body hotdeal-summary';
+        content.textContent = post.body;
+        const appeal=document.createElement('p');appeal.className='hotdeal-appeal';appeal.textContent=post.appeal;
+        const period=document.createElement('small');period.className='hotdeal-period';
+        period.textContent=(post.starts_on>today()?'예정 · ':'')+post.starts_on+' ~ '+post.ends_on;
+        info.append(metadata,heading,appeal,content,period);
+        const photos = document.createElement('div');
+        photos.className = 'live-event-photos';
+        for (const path of post.image_paths) {
+          const image = document.createElement('img');
+          image.src = client.storage.from(bucket).getPublicUrl(path).data.publicUrl;
+          image.alt = post.title + ' 첨부 사진';
+          image.loading = 'lazy';
+          photos.append(image);
+        }
+        if(photos.firstElementChild){const cover=photos.firstElementChild.cloneNode();cover.className='hotdeal-cover';main.append(cover);}
+        else main.classList.add('hotdeal-no-image');
+        const url = inquiryLink(post.inquiry_url);
+        if (url) {
+          const link = document.createElement('a');
+          link.href = url;
+          link.target = '_blank';
+          link.rel = 'noopener noreferrer';
+          link.textContent = '카카오톡 예약 ↗';link.className='hotdeal-kakao';
+          info.append(link);
+        }
+        main.append(info);article.append(main);
+        const details=document.createElement('details');details.className='hotdeal-details';
+        const summary=document.createElement('summary');summary.textContent='프로모션 자세히 보기';
+        const full=document.createElement('p');full.className='event-body';full.textContent=post.body;
+        details.append(summary,full);if(photos.children.length)details.append(photos);article.append(details);
+        posts.append(article);
+      }
+      if(rows.length>listLimit){const more=document.createElement('button');more.className='shop-more';more.textContent='핫딜 더 보기';more.onclick=()=>{listLimit+=30;renderEvents();};posts.append(more);}
+    } catch {
+      if (version === listingVersion) posts.textContent = '핫딜을 불러오지 못했습니다. 잠시 후 다시 확인해 주세요.';
+    }
+  };
+
+  openEventWriter = async function () {
+    switchTab('events');
+    writer.classList.remove('hidden');
+    writer.textContent = '업체회원 정보를 확인하는 중…';
+    try {
+      await connect();
+      const {client} = accountState();
+      const session = (await checked(client.auth.getSession())).session;
+      if (!session) { await showPage('account'); return; }
+      const profile = await checked(client.from('tripfact_profiles').select('member_type,business_approved,business_name')
+        .eq('user_id',session.user.id).maybeSingle());
+      if (profile?.member_type !== 'business' || !profile.business_approved) {
+        writer.textContent = '승인된 업체회원만 핫딜을 등록할 수 있습니다. 업체회원 가입 후 업체센터에서 승인 상태를 확인해 주세요.';
+        return;
+      }
+      const getFee = () => checked(client.from('tripfact_ad_rates').select('daily_points')
+        .eq('city_slug','danang').eq('zone_id','event-post').single());
+      const [{daily_points:fee}, points] = await Promise.all([getFee(), checked(client.rpc('tripfact_my_points'))]);
+      writer.innerHTML = `<h2 style="font-size:17px">핫딜 등록</h2>
+        <p><b>${escapeHTML(profile.business_name)}</b></p>
+        <p class="vendor-help">등록비 <strong>${Number(fee).toLocaleString('ko-KR')}P / 건</strong> · 잔여 ${Number(points).toLocaleString('ko-KR')}P</p>
+        <form><label class="field" for="liveEventTitle">프로모션 제목</label><input id="liveEventTitle" name="title" maxlength="70" required placeholder="예: 평일 오전 방문 시 20% 할인">
+        <label class="field" for="liveEventAppeal">한 줄 어필 문장</label><input id="liveEventAppeal" name="appeal" maxlength="100" required placeholder="예: 미케비치에서 도보 3분, 한국어 예약 가능">
+        <label class="field" for="liveEventBody">혜택·가격·이용 조건</label><textarea id="liveEventBody" name="body" rows="5" maxlength="3000" required placeholder="할인 전후 가격, 포함 서비스와 제외 조건을 적어 주세요."></textarea>
+        <div class="hotdeal-dates"><label>시작일<input type="date" name="start" value="${today()}" required></label><label>종료일<input type="date" name="end" min="${today()}" value="${today()}" required></label></div>
+        <label class="field" for="liveEventInquiry">예약 카카오톡 링크</label><input id="liveEventInquiry" name="inquiry" type="url" maxlength="2048" placeholder="https://pf.kakao.com/… 또는 https://open.kakao.com/…" required>
+        <label class="field" for="liveEventCategory">업종</label><select id="liveEventCategory" name="category">${categories.map(c=>'<option>'+c+'</option>').join('')}</select>
+        <label class="field" for="liveEventFiles">이미지 1~2장 · 첫 번째가 대표 이미지</label><input id="liveEventFiles" type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required>
+        <p class="vendor-help">JPG, PNG, WebP · 한 장당 최대 2MB</p>
+        <div class="member-profile-actions"><button type="submit" class="primary">${Number(fee).toLocaleString('ko-KR')}P 사용하고 등록</button>
+        <button type="button" class="vendor-link" data-cancel>취소</button></div><p role="status"></p></form>`;
+      const form = writer.querySelector('form');
+      const status = form.querySelector('[role=status]');
+      let eventId = crypto.randomUUID();
+      form.oninput = () => { eventId = crypto.randomUUID(); };
+      form.querySelector('[data-cancel]').onclick = () => writer.classList.add('hidden');
+      form.onsubmit = async event => {
+        event.preventDefault();
+        const button = form.querySelector('[type=submit]');
+        if (button.disabled) return;
+        const values = new FormData(form);
+        const title = String(values.get('title')).trim();
+        const body = String(values.get('body')).trim();
+        const appeal=String(values.get('appeal')).trim(),start=String(values.get('start')),end=String(values.get('end'));
+        const url = inquiryLink(values.get('inquiry'));
+        const photos = [...$('liveEventFiles').files];
+        if (!title || !body || !appeal || !url || url.length > 2048 || !start || end<start || end<today()) {
+          status.textContent = '제목·어필 문장·혜택·이용 기간과 올바른 카카오톡 링크를 확인해 주세요.';
+          return;
+        }
+        if (photos.length < 1 || photos.length > 2 || photos.some(photo => photo.size > 2097152 ||
+          !['image/jpeg','image/png','image/webp'].includes(photo.type))) {
+          status.textContent = '2MB 이하 JPG, PNG, WebP 이미지를 최대 2장 선택해 주세요.';
+          return;
+        }
+        const id = eventId;
+        for (const control of form.elements) control.disabled = true;
+        status.textContent = '등록 중…';
+        try {
+          const paths = photos.map((_, index) => `${session.user.id}/${id}/${index}`);
+          for (const [index, photo] of photos.entries()) {
+            const {error} = await client.storage.from(bucket).upload(paths[index],photo,{contentType:photo.type});
+            if (error && String(error.statusCode) !== '409' && error.error !== 'Duplicate') throw new Error(error.message);
+          }
+          const paid = await checked(client.rpc('tripfact_publish_hotdeal',{
+            p_id:id,p_category:values.get('category'),p_title:title,p_body:body,p_inquiry_url:url,
+            p_images:paths,p_expected_points:fee,p_appeal:appeal,p_start:start,p_end:end,
+          }));
+          writer.classList.add('hidden');
+          toast('핫딜을 등록했습니다. ' + Number(paid).toLocaleString('ko-KR') + 'P 사용');
+          filter = '전체';
+          renderEvents();
+          updateMemberHeader();
+        } catch (error) { status.textContent = error.message; }
+        finally { for (const control of form.elements) control.disabled = false; }
+      };
+      writer.scrollIntoView({block:'start'});
+    } catch {
+      writer.textContent = '핫딜 등록 설정을 불러오지 못했습니다. 업체센터에서 포인트와 연결 상태를 확인해 주세요.';
+    }
+  };
+}
+
 (() => {
   let client, config, session, profile, admin = false;
   let previousPending = new Set();
@@ -1245,6 +1596,7 @@ function renderAdminMembers(container, queryMembers) {
         <option value="consumer">일반회원</option><option value="business">업체회원</option></select>
         <div id="memberBusinessName" class="hidden">${field('signupBusinessName','업체명','maxlength="120"')}</div>` : ''}
       ${field('memberEmail','이메일','type="email" required autocomplete="email"')}
+      ${signup ? field('memberNickname','닉네임','minlength="2" maxlength="40" required autocomplete="nickname"') : ''}
       ${field('memberPassword','비밀번호',`type="password" minlength="8" required autocomplete="${signup?'new-password':'current-password'}"`)}
       <button class="primary" style="margin-top:14px" type="submit">${signup?'가입하기':'로그인'}</button>
       <button class="vendor-link" type="button" id="changeAuthMode">${signup?'로그인으로':'회원가입'}</button></form>`);
@@ -1263,9 +1615,11 @@ function renderAdminMembers(container, queryMembers) {
         if (signup) {
           const type = values.get('memberType');
           const businessName = String(values.get('signupBusinessName') || '').trim();
+          const nickname = String(values.get('memberNickname') || '').trim();
+          if (nickname.length < 2) throw new Error('닉네임을 2자 이상 입력해 주세요.');
           if (type === 'business' && !businessName) throw new Error('업체명을 입력해 주세요.');
           const result = await checked(client.auth.signUp({...credentials, options:{
-            emailRedirectTo: location.origin + '/', data:{member_type:type, business_name:businessName},
+            emailRedirectTo: location.origin + '/', data:{member_type:type, business_name:businessName, display_name:nickname},
           }}));
           if (!result.session) {
             authForm();
@@ -1471,7 +1825,7 @@ function renderAdminMembers(container, queryMembers) {
     try {
       const rate = await checked(client.from('tripfact_ad_rates').select('daily_points,updated_at')
         .eq('city_slug','danang').eq('zone_id','event-post').single());
-      fees.innerHTML = `<form class="rate-tools"><label>이벤트 글 등록비 (P/건)
+      fees.innerHTML = `<form class="rate-tools"><label>핫딜 글 등록비 (P/건)
         <input type="number" name="points" min="0" max="2147483647" step="1" value="${rate.daily_points}" required></label>
         <button class="primary" type="submit">등록비 저장</button></form><p class="vendor-help" role="status"></p>`;
       const form = fees.querySelector('form');
@@ -1508,6 +1862,7 @@ function renderAdminMembers(container, queryMembers) {
         .order('approved_at',{ascending:false}).limit(30)),
     ]);
     $('memberContent').innerHTML = section('방문·클릭 통계와 구매가격 제보', '<div id="adminInsights"></div>') +
+      section('광고 구역 ON/OFF', '<div id="adminAdVisibility"></div>') +
       section('지금 다낭 신고 관리', '<div id="adminSocial"></div>') +
       section('충전 신청 <span id="adminPendingCount"></span>', '<div id="adminPendingRows"></div>') +
       section('업체 가입 확인', businesses.length ? businesses.map(row => `<div class="booking-row">
@@ -1516,7 +1871,7 @@ function renderAdminMembers(container, queryMembers) {
         <b>+${money(row.amount_krw)}P · ${esc(row.depositor)}</b>${esc(new Date(row.approved_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))}</div>`).join('') : '<p>포인트 지급 내역이 없습니다.</p>') +
       section('회원 목록', '<div id="adminMembers"></div>') +
       section('광고 구역 단가', '<p>같은 광고 구역의 하루 단가는 다낭·나트랑·푸꾸옥에 공통 적용됩니다.</p><div id="adminAdRates"></div>') +
-      section('이벤트 글 등록비', '<div id="adminEventFee"></div><h3>이벤트 포인트 사용 내역</h3><div id="adminEventSpending"></div>') +
+      section('핫딜 글 등록비', '<div id="adminEventFee"></div><h3>핫딜 포인트 사용 내역</h3><div id="adminEventSpending"></div>') +
       section('광고 일정', '<p>광고 예약 일정은 연결 준비 중입니다.</p>');
     $('memberContent').querySelectorAll('[data-business]').forEach(control => {
       control.onclick = async () => {
@@ -1529,6 +1884,7 @@ function renderAdminMembers(container, queryMembers) {
       };
     });
     renderAdminInsights($('adminInsights'), (name, args) => checked(client.rpc(name, args)));
+    renderAdminAdVisibility($('adminAdVisibility'), (name, args) => checked(client.rpc(name, args)));
     renderAdminCommunity($('adminSocial'), (name, args) => checked(client.rpc(name, args)));
     renderAdminMembers($('adminMembers'), (type, query, offset) =>
       checked(client.rpc('tripfact_admin_members', {p_type:type,p_query:query,p_offset:offset})));
@@ -1748,7 +2104,7 @@ function renderAdminMembers(container, queryMembers) {
 })();
 
 (() => {
-  const pausedTabs = new Set(['explore','spa','dining','massage','nail','barber','cafe','events','vendor']);
+  const pausedTabs = new Set(['explore','spa','dining','massage','nail','barber','cafe','vendor']);
   document.querySelectorAll('[data-tab]').forEach(button => {
     if (pausedTabs.has(button.dataset.tab)) button.remove();
   });
@@ -1759,15 +2115,24 @@ function renderAdminMembers(container, queryMembers) {
     if (!['전체','쇼핑'].includes(favoriteCategories[i])) favoriteCategories.splice(i,1);
   }
   document.querySelector('.quick')?.remove();
-  document.querySelector('.footer-vendor')?.remove();
+  const vendorLink=document.querySelector('.footer-vendor');
+  if(vendorLink){vendorLink.textContent='업체센터 · 광고·핫딜 안내 ↗';vendorLink.onclick=()=>openVendor();}
   document.querySelector('.footer > span:nth-child(2)')?.remove();
   document.querySelectorAll('.ad-slot').forEach(node => node.classList.add('hidden'));
+  const businessEntry=document.createElement('aside');businessEntry.className='home-business-entry';
+  businessEntry.innerHTML='<div><strong>우리 매장의 혜택을 다낭 여행자에게</strong><p>업체회원 가입 · 포인트 충전 · 광고·핫딜 등록 안내</p></div><div class="home-business-actions"><button class="vendor-link" type="button" data-center>업체센터·포인트 충전</button><button class="primary" type="button" data-hotdeal>핫딜 등록</button></div>';
+  businessEntry.querySelector('[data-center]').onclick=()=>openVendor();
+  businessEntry.querySelector('[data-hotdeal]').onclick=()=>openEventWriter();
+  document.querySelector('#homePage .tools-grid').after(businessEntry);
   document.querySelector('#homePage .subtitle').textContent = '다낭 날씨, 환율, 한시장 쇼핑시세를 한곳에서 확인하세요.';
   document.querySelector('.travel-note p').textContent = '쇼핑시세에서 하트를 눌러 사고 싶은 품목을 모아두세요.';
 
   const member = document.querySelector('.member-entry');
   member.style.display = 'none';
   document.querySelector('.mobile-nav').style.gridTemplateColumns = 'repeat(3, minmax(0, 1fr))';
+  document.querySelectorAll('[data-tab="events"]').forEach(button=>{
+    button.innerHTML=button.closest('.mobile-nav')?'<span>🎁</span>핫딜':'핫딜';
+  });
 
   const updateCount = () => {
     $('savedCount').textContent = shoppingCatalogue.filter(p => shoppingFavorites.includes(p.marketIndex)).length;
@@ -1797,12 +2162,11 @@ function renderAdminMembers(container, queryMembers) {
 (() => {
   const page=document.createElement('section');
   page.id='communityPage';page.className='subpage hidden community-page';
-  page.innerHTML=`<div class="community-heading"><div><span class="eyebrow">HERE IN DA NANG</span><h1>지금 다낭 🌴</h1>
-    <p>뭐 먹고, 뭐 하고 계세요? 가볍게 이야기해요.</p></div><button class="primary" data-compose>글 쓰기</button></div>
+  page.innerHTML=`<div class="community-heading"><h1>지금 다낭</h1><details class="community-options"><summary aria-label="커뮤니티 메뉴">☰</summary><div><button type="button" data-mine aria-pressed="false">내 글·참여한 방</button><button type="button" data-blocks>차단 관리</button><button type="button" data-refresh>새로고침</button></div></details></div>
+    <div class="community-categories" aria-label="글 카테고리">${[['','전체'],['daily','일상'],['question','질문'],['together','같이해요']].map(([key,label])=>`<button type="button" data-category-filter="${key}" aria-pressed="${key===''}">${label}</button>`).join('')}</div>
     <div class="community-tools"><label>지역<select data-region><option value="">전체 지역</option><option>다낭 시내</option><option>미케비치</option><option>호이안</option><option>바나힐</option></select></label>
-    <label>보기<select data-kind><option value="">전체</option><option value="daily">일상</option><option value="room">대화·모임방</option><option value="mine">내 글·참여한 방</option></select></label>
-    <button type="button" data-refresh>새로고침</button><button type="button" data-blocks>차단 관리</button></div>
-    <p class="community-status" role="status" aria-live="polite"></p><div data-writer></div><div data-content></div><button class="shop-more hidden" data-more>더 보기</button>`;
+    <span class="community-sort">작성일 최신순</span></div>
+    <div data-community-ad></div><p class="community-status" role="status" aria-live="polite"></p><div data-writer></div><div data-content></div><button class="shop-more hidden" data-more>더 보기</button><button class="primary community-compose-fab" data-compose>＋ 글쓰기</button>`;
   document.querySelector('main').insertBefore(page,document.querySelector('.footer'));
   for(const selector of ['.desktop-nav','.mobile-nav']) {
     const button=document.createElement('button');button.dataset.tab='social';
@@ -1811,14 +2175,85 @@ function renderAdminMembers(container, queryMembers) {
     const nav=document.querySelector(selector);
     nav.insertBefore(button,nav.querySelector('[data-tab="favs"]'));
   }
-  document.querySelector('.mobile-nav').style.gridTemplateColumns='repeat(4,minmax(0,1fr))';
+  document.querySelector('.mobile-nav').style.gridTemplateColumns='repeat(5,minmax(0,1fr))';
+  const mobile=document.querySelector('.mobile-nav');mobile.insertBefore(mobile.querySelector('[data-tab="social"]'),mobile.querySelector('[data-tab="events"]'));
   document.querySelector('.member-entry').style.display='';
   const content=page.querySelector('[data-content]'),more=page.querySelector('[data-more]');
   const status=page.querySelector('[role=status]'),writer=page.querySelector('[data-writer]');
-  const state={rows:[],selected:null,version:0,busy:false,drafts:new Map()};
+  const state={rows:[],selected:null,version:0,busy:false,drafts:new Map(),category:''};
+  const categories={daily:'일상',question:'질문',together:'같이해요'};
+  function selectCategory(category) {
+    state.category=category;
+    page.querySelectorAll('[data-category-filter]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.categoryFilter===category));
+    page.querySelector('[data-mine]').setAttribute('aria-pressed',category==='mine');
+    return loadFeed();
+  }
   const esc=escapeHTML;
   const stamp=value=>new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Ho_Chi_Minh',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
   const say=text=>{status.textContent=text;};
+  const homeBoards=document.createElement('div');
+  homeBoards.className='home-community-boards';
+  homeBoards.setAttribute('aria-label','지금 다낭 최신 소식');
+  $('homePage').append(homeBoards);
+  const previews=[
+    {category:'',title:'🌴 지금 다낭'},
+    {category:'question',title:'💬 궁금해요'},
+    {category:'together',title:'🙌 같이해요'},
+  ].map(board=>{
+    const section=document.createElement('section');section.className='panel home-community-board';
+    const heading=document.createElement('div');heading.className='section-head';
+    const title=document.createElement('h2');title.textContent=board.title;
+    const all=document.createElement('button');all.type='button';all.className='more';all.textContent='전체 보기 ›';
+    all.onclick=()=>openFromHome(board.category);
+    heading.append(title,all);
+    const list=document.createElement('div');list.className='home-community-list';list.textContent='최신 소식 불러오는 중…';
+    section.append(heading,list);homeBoards.append(section);
+    return {...board,list};
+  });
+  function openFromHome(category,id=null) {
+    state.category=category;
+    page.querySelectorAll('[data-category-filter]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.categoryFilter===category));
+    page.querySelector('[data-mine]').setAttribute('aria-pressed','false');
+    switchTab('social');
+    if(id)loadDetail(id);
+  }
+  function recentTime(value) {
+    const minutes=Math.max(0,Math.floor((Date.now()-new Date(value).getTime())/60000));
+    if(minutes<1)return '방금';
+    if(minutes<60)return minutes+'분 전';
+    if(minutes<1440)return Math.floor(minutes/60)+'시간 전';
+    return stamp(value)+' (현지)';
+  }
+  let homeLoading=false;
+  async function refreshHomeBoards() {
+    if(homeLoading)return;
+    homeLoading=true;
+    try {
+      await Promise.allSettled(previews.map(async board=>{
+        try {
+          const {posts}=await call('tripfact_social_read',{p_kind:board.category});
+          board.list.replaceChildren();
+          for(const post of posts.slice(0,5)) {
+            const button=document.createElement('button');button.type='button';button.className='home-community-row';
+            const text=document.createElement('span');text.className='home-community-text';
+            const title=document.createElement('b');title.textContent=post.title||post.body.split('\n').find(line=>line.trim())||post.body;
+            const meta=document.createElement('small');meta.textContent=post.nickname+' · '+post.region+' · '+recentTime(post.created_at);
+            const comments=document.createElement('span');comments.className='home-community-comments';comments.textContent='💬 '+post.comments;
+            comments.setAttribute('aria-label','댓글 '+post.comments+'개');
+            text.append(title,meta);button.append(text,comments);
+            button.onclick=()=>openFromHome(board.category,post.id);board.list.append(button);
+          }
+          if(!posts.length) {
+            const empty=document.createElement('p');empty.className='vendor-help';empty.textContent='아직 올라온 이야기가 없어요. 첫 소식을 남겨 주세요.';board.list.append(empty);
+          }
+        }catch{
+          board.list.replaceChildren();
+          const retry=document.createElement('button');retry.type='button';retry.className='vendor-link';retry.textContent='소식을 불러오지 못했어요 · 다시 보기';
+          retry.onclick=refreshHomeBoards;board.list.append(retry);
+        }
+      }));
+    }finally{homeLoading=false;}
+  }
   async function client() {return window.tripfactAccount.client();}
   async function call(name,args={}) {
     const c=await client(),{data,error}=await c.rpc(name,args);
@@ -1856,36 +2291,56 @@ function renderAdminMembers(container, queryMembers) {
     like.setAttribute('aria-label',(post.liked?'좋아요 취소':'좋아요')+' '+post.likes);like.setAttribute('aria-pressed',post.liked);
     bar.append(like);
     if(!detail)bar.append(control((post.kind==='room'?'대화':'댓글')+' '+post.comments,()=>loadDetail(post.id)));
+    const menu=document.createElement('details');menu.className='community-post-menu';
+    const summary=document.createElement('summary');summary.textContent='⋯';summary.setAttribute('aria-label','글 관리 메뉴');menu.append(summary);
+    const options=document.createElement('div');menu.append(options);
     if(post.mine) {
-      if(post.kind==='room'&&!post.closed)bar.append(control('방 닫기',async()=>{
+      if(post.kind==='room'&&!post.closed)options.append(control('방 닫기',async()=>{
         if(confirm('방을 닫으면 새로운 참여와 대화가 종료됩니다. 닫을까요?')){await action('close',post.id);await refresh();}
       }));
-      bar.append(control('삭제',async()=>{if(confirm('이 글을 삭제할까요?')){await action('delete',post.id);await loadFeed();}}));
+      options.append(control('삭제',async()=>{if(confirm('이 글을 삭제할까요?')){await action('delete',post.id);await loadFeed();}}));
     } else {
-      bar.append(control('신고',()=>report(post.id)));
-      bar.append(control('작성자 차단',async()=>{
+      options.append(control('신고',()=>report(post.id)));
+      options.append(control('작성자 차단',async()=>{
         if(confirm('이 작성자의 글과 댓글을 숨길까요?')){await action('block',post.id);await loadFeed();}
       }));
     }
+    bar.append(menu);
     return bar;
   }
   function card(post,detail=false) {
     const article=document.createElement('article');article.className='panel community-card';
+    if(!detail) {
+      article.className='community-feed-row';
+      const lines=post.body.split('\n').map(s=>s.trim()).filter(Boolean);
+      const title=post.title||lines[0]||post.body;
+      const preview=post.title?post.body:lines.slice(1).join(' ');
+      const open=document.createElement('button');open.type='button';open.className='community-post-open';
+      open.innerHTML=`<span class="community-feed-category">${esc(categories[post.category]||(post.kind==='room'?'같이해요':'일상'))}${post.kind==='room'?' · '+(post.closed?'종료한 방':'대화방'):''}</span><h2>${esc(title)}</h2>${preview?'<p>'+esc(preview)+'</p>':''}`;
+      open.onclick=()=>loadDetail(post.id);article.append(open);
+      const footer=document.createElement('div');footer.className='community-feed-footer';
+      const meta=document.createElement('span');meta.textContent=post.region+' · '+recentTime(post.created_at);
+      meta.title=post.nickname+' · '+stamp(post.created_at)+' (현지)';
+      footer.append(meta,tools(post));article.append(footer);
+      return article;
+    }
     article.innerHTML=`<div class="community-meta"><b>${esc(post.nickname)}</b><span>${esc(post.region)} · ${stamp(post.created_at)} (현지)</span></div>
-      ${post.kind==='room'?`<span class="community-tag">${post.closed?'종료한 방':'대화·모임방'} · ${post.members}명</span><h2>${esc(post.title)}</h2>`:''}
+      <span class="community-tag">${esc(categories[post.category]||(post.kind==='room'?'같이해요':'일상'))}${post.kind==='room'?' · '+(post.closed?'종료한 방':'대화방')+' · '+post.members+'명':''}</span>
+      ${post.title?`<h2>${esc(post.title)}</h2>`:''}
       <p class="community-body ${detail?'':'community-preview'}">${esc(post.body)}</p>`;
     article.append(tools(post,detail));
     if(post.kind==='room'&&!detail)article.append(control(post.joined?'참여 중인 방 열기':'방 둘러보기',()=>loadDetail(post.id)));
     return article;
   }
   async function loadFeed(append=false) {
+    page.dataset.view='feed';window.tripfactAds?.renderCommunity(state.category);
     const version=++state.version;state.selected=null;more.classList.add('hidden');
     if(!append){state.rows=[];content.textContent='이야기 불러오는 중…';}
     say('');
     const last=append?state.rows.at(-1):null;
     try {
       const result=await call('tripfact_social_read',{
-        p_region:page.querySelector('[data-region]').value,p_kind:page.querySelector('[data-kind]').value,
+        p_region:page.querySelector('[data-region]').value,p_kind:state.category,
         p_before:last?.created_at||null,p_last:last?.id||null,
       });
       if(version!==state.version)return;
@@ -1897,6 +2352,7 @@ function renderAdminMembers(container, queryMembers) {
     }catch(error){if(version===state.version){if(!append)content.replaceChildren();say(error.message);}}
   }
   async function loadDetail(id,background=false) {
+    page.dataset.view='detail';page.querySelector('[data-community-ad]').replaceChildren();
     const version=++state.version;state.selected=id;more.classList.add('hidden');say('');
     try {
       const {posts,messages}=await call('tripfact_social_read',{p_id:id});
@@ -1947,27 +2403,40 @@ function renderAdminMembers(container, queryMembers) {
     await requireAccount();
     writer.innerHTML=`<form id="communityComposer" class="panel community-composer"><h2>오늘의 다낭을 나눠요</h2>
       <p class="vendor-help">계정의 표시 이름으로 게시됩니다. 성별·나이는 선택해서 이야기해 주세요. 링크·연락처·외부 메신저 유도·홍보성 도배는 등록할 수 없습니다.</p>
-      <label>글 종류<select name="kind"><option value="daily">짧은 일상</option><option value="room">대화·모임방 만들기</option></select></label>
+      <label>카테고리<select name="category"><option value="daily">일상</option><option value="question">질문</option><option value="together">같이해요</option></select></label>
+      <label data-room-choice hidden><input type="checkbox" name="room"> 참여자끼리 대화하는 방으로 만들기</label>
       <label>지역<select name="region"><option>다낭 시내</option><option>미케비치</option><option>호이안</option><option>바나힐</option></select></label>
-      <label data-title hidden>방 이름<input name="title" maxlength="80" placeholder="예: 오늘 저녁 호이안 이야기해요"></label>
+      <label data-title><span data-title-label>제목 (선택)</span><input name="title" maxlength="80" placeholder="어떤 이야기를 나누고 싶으세요?"></label>
       <label>내용<textarea name="body" maxlength="1500" rows="5" placeholder="지금 쌀국수 먹고 있어요. 다들 점심 뭐 드셨나요?" required></textarea></label>
       <div class="community-actions"><button type="submit" class="primary">올리기</button><button type="button" data-cancel>취소</button></div></form>`;
     const form=writer.firstElementChild;let requestId=crypto.randomUUID();
-    form.elements.kind.onchange=()=>{const room=form.elements.kind.value==='room';form.querySelector('[data-title]').hidden=!room;form.elements.title.required=room;};
+    function roomChoice() {
+      const together=form.elements.category.value==='together';
+      form.querySelector('[data-room-choice]').hidden=!together;
+      if(!together)form.elements.room.checked=false;
+      const room=together&&form.elements.room.checked;
+      form.querySelector('[data-title-label]').textContent=room?'방 이름':'제목 (선택)';form.elements.title.required=room;
+    }
+    form.elements.category.onchange=roomChoice;form.elements.room.onchange=roomChoice;
     form.querySelector('[data-cancel]').onclick=()=>writer.replaceChildren();
     form.onsubmit=async event=> {
       event.preventDefault();if(state.busy||!form.reportValidity())return;
       state.busy=true;const submit=form.querySelector('[type=submit]');submit.disabled=true;
       try {
         const data=Object.fromEntries(new FormData(form));
+        data.kind=data.category==='together'&&form.elements.room.checked?'room':'daily';
         await action('create',requestId,data);writer.replaceChildren();
-        page.querySelector('[data-region]').value='';page.querySelector('[data-kind]').value='';
+        page.querySelector('[data-region]').value='';state.category='';
+        page.querySelectorAll('[data-category-filter]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.categoryFilter===''));
+        page.querySelector('[data-mine]').setAttribute('aria-pressed','false');
         await loadDetail(requestId);
+        refreshHomeBoards();
       }catch(error){say(error.message);}finally{state.busy=false;submit.disabled=false;}
     };
     form.scrollIntoView({block:'nearest'});form.elements.body.focus();
   }
   async function blocks() {
+    page.dataset.view='blocks';page.querySelector('[data-community-ad]').replaceChildren();
     await requireAccount();++state.version;state.selected=null;more.classList.add('hidden');
     const rows=await call('tripfact_social_my_blocks');
     content.replaceChildren(control('‹ 목록으로',()=>loadFeed()));
@@ -1980,13 +2449,19 @@ function renderAdminMembers(container, queryMembers) {
   page.querySelector('[data-compose]').onclick=()=>compose().catch(error=>say(error.message));
   page.querySelector('[data-blocks]').onclick=()=>blocks().catch(error=>say(error.message));
   page.querySelector('[data-refresh]').onclick=()=>state.selected?loadDetail(state.selected):loadFeed();
+  page.querySelectorAll('[data-category-filter]').forEach(b=>{b.onclick=()=>selectCategory(b.dataset.categoryFilter);});
+  page.querySelector('[data-mine]').onclick=()=>selectCategory(state.category==='mine'?'':'mine');
   page.querySelectorAll('select').forEach(select=>{select.onchange=()=>loadFeed();});
   more.onclick=()=>loadFeed(true);
   const show=switchTab;
   switchTab=function(tab) {
     show(tab);page.classList.toggle('hidden',tab!=='social');
     if(tab==='social')loadFeed();else{state.version++;}
+    if(tab==='home')refreshHomeBoards();
   };
+  refreshHomeBoards();
+  setInterval(()=>{if(currentTab==='home'&&!document.hidden)refreshHomeBoards();},60000);
+  window.addEventListener('focus',()=>{if(currentTab==='home')refreshHomeBoards();});
   setInterval(()=> {
     const draft=$('communityReply')?.elements.body;
     if(currentTab==='social'&&state.selected&&!document.hidden&&!state.busy&&!draft?.value&&!writer.firstElementChild)loadDetail(state.selected,true);
@@ -2000,7 +2475,7 @@ async function renderAdminCommunity(container,call) {
     if(!container.isConnected)return;
     container.replaceChildren();
     const rules=document.createElement('details');rules.className='community-admin-rules';
-    rules.innerHTML='<summary>금지 문구 관리</summary><form><label>한 줄에 하나씩, 최대 300개<textarea name="terms" rows="8" maxlength="24000" disabled></textarea></label><button type="submit" class="primary" disabled>금지 문구 저장</button><p role="status"></p></form>';
+    rules.innerHTML='<summary>스팸 단어 관리</summary><form><label>한 줄에 하나씩, 최대 300개<textarea name="terms" rows="8" maxlength="24000" disabled></textarea></label><button type="submit" class="primary" disabled>스팸 단어 저장</button><p role="status"></p></form>';
     container.append(rules);
     const ruleForm=rules.querySelector('form'),ruleStatus=rules.querySelector('[role=status]');
     call('tripfact_admin_social_terms',{}).then(terms=>{
@@ -2013,11 +2488,38 @@ async function renderAdminCommunity(container,call) {
       try{await call('tripfact_admin_social_terms',{p_terms:terms});ruleStatus.textContent='금지 문구를 저장했습니다.';}
       catch{ruleStatus.textContent='저장하지 못했습니다. 다시 시도해 주세요.';}finally{button.disabled=false;}
     };
+    const suspended=document.createElement('details');
+    suspended.innerHTML='<summary>스팸 처리한 계정</summary><div>불러오는 중…</div>';container.append(suspended);
+    call('tripfact_admin_social_suspend',{}).then(rows=>{
+      const list=suspended.querySelector('div');list.replaceChildren();
+      if(!rows.length)list.textContent='스팸 처리한 계정이 없습니다.';
+      for(const user of rows){
+        const row=document.createElement('p');row.textContent=user.nickname+' ';
+        const button=document.createElement('button');button.className='vendor-link';button.textContent='제한 해제';
+        button.onclick=async()=>{
+          button.disabled=true;
+          try{await call('tripfact_admin_social_suspend',{p_user:user.id,p_suspend:false});await renderAdminCommunity(container,call);}
+          catch{button.disabled=false;row.append(' 처리하지 못했습니다.');}
+        };row.append(button);list.append(row);
+      }
+    }).catch(()=>{suspended.querySelector('div').textContent='계정 제한 목록을 불러오지 못했습니다. 011 SQL 적용 여부를 확인해 주세요.';});
     if(!rows.length)container.append('처리할 신고가 없습니다.');
     for(const row of rows) {
       const item=document.createElement('article');item.className='booking-row';
       item.innerHTML=`<b>${escapeHTML(row.nickname)} · ${escapeHTML(row.region)}</b><p>${escapeHTML(row.title)} ${escapeHTML(row.body)}</p>
         ${(row.reports||[]).map(r=>'<p>신고 사유 · '+escapeHTML(r.reason)+(r.comment_body?'<br>대상 댓글 · '+escapeHTML(r.comment_body):'')+'</p>').join('')}`;
+      const spammers=new Map([[row.author,'글 작성자 스팸 처리']]);
+      for(const report of row.reports||[])if(report.comment_author)spammers.set(report.comment_author,'댓글 작성자 스팸 처리');
+      for(const [user,label] of spammers){
+        if(!user)continue;
+        const button=document.createElement('button');button.className='vendor-link';button.textContent=label;
+        button.onclick=async()=>{
+          if(!confirm('이 계정의 기존 글·댓글을 숨기고 새 글·댓글 등록을 제한할까요?'))return;
+          button.disabled=true;
+          try{await call('tripfact_admin_social_suspend',{p_user:user,p_suspend:true});await renderAdminCommunity(container,call);}
+          catch{button.disabled=false;item.append(' 계정 제한을 적용하지 못했습니다.');}
+        };item.append(button);
+      }
       for(const report of (row.reports||[]).filter(r=>r.comment_id)) {
         const button=document.createElement('button');button.className='vendor-link';button.textContent='신고된 댓글 숨김';
         button.onclick=async()=>{
@@ -2039,7 +2541,7 @@ async function renderAdminCommunity(container,call) {
 }
 
 (() => {
-  const names = {home:'홈',market:'쇼핑시세',favs:'내 찜',social:'지금 다낭'};
+  const names = {home:'홈',market:'쇼핑시세',favs:'내 찜',social:'지금 다낭',events:'핫딜'};
   let session;
   function sessionId() {
     const now = Date.now();
@@ -2179,7 +2681,7 @@ async function renderAdminCommunity(container,call) {
 })();
 
 function renderAdminInsights(container,call) {
-  const esc=escapeHTML, names={home:'홈',market:'쇼핑시세',favs:'내 찜',social:'지금 다낭'};
+  const esc=escapeHTML, names={home:'홈',market:'쇼핑시세',favs:'내 찜',social:'지금 다낭',events:'핫딜'};
   container.innerHTML=`<div class="insight-toolbar"><label>통계 기간 <select data-period><option value="1">오늘</option><option value="7" selected>최근 7일</option><option value="30">최근 30일</option></select></label><button type="button" data-refresh>새로고침</button></div>
     <p class="vendor-help">한국시간 기준 · 방문은 브라우저 탭별 30분 세션 · 방문자 수와 다를 수 있습니다. 수집 시작 이후 자료만 표시합니다.</p>
     <div data-traffic role="status"></div><h3>구매가격 제보</h3>
@@ -2242,6 +2744,87 @@ function renderAdminInsights(container,call) {
     .then(()=>{baselineStatus.textContent='기존 시세 비교 기준을 업데이트했습니다.';})
     .catch(()=>{baselineStatus.textContent='비교 기준 업데이트 실패 · 접수된 제보는 별도 검토로 분류됩니다. 연결을 확인한 뒤 새로고침해 주세요.';});
   traffic();reports();
+}
+
+(() => {
+  const labels={home:'메인',shopping:'쇼핑시세','events-top':'핫딜 상단','favorites-bottom':'내 찜 하단','social-all':'커뮤니티 · 전체','social-daily':'커뮤니티 · 일상','social-question':'커뮤니티 · 질문','social-together':'커뮤니티 · 같이해요'};
+  let visibility=Object.fromEntries(Object.keys(labels).map(zone=>[zone,location.protocol==='file:']));
+  const examples={
+    home:[['🌿','코코스파','여행의 피로를 쉬어가는 시간','아로마 관리 · 픽업 혜택','mint'],['🚐','코코픽업','공항에서 숙소까지 편하게','공항 이동 · 한국어 상담','sand']],
+    shopping:[['🛍️','코코마켓','한시장 쇼핑, 한곳에서 쏙','의류·가방 · 매장 방문 혜택','sand'],['☕','코코커피','다낭의 향을 선물해 보세요','커피·기념품 · 묶음 구매 혜택','mint']],
+    'events-top':[['💅','코코네일','여행 중 손끝까지 예쁘게','젤네일 프로모션 안내','pink'],['🍜','코코키친','오늘 저녁은 든든하게','베트남 음식 · 세트 메뉴 혜택','sand']],
+    'favorites-bottom':[['🎁','코코기프트','찜한 선물, 알뜰하게 준비해요','기념품 · 선물 포장 혜택','pink'],['🛵','코코딜리버리','쇼핑 짐은 숙소로 보내세요','쇼핑 배달 · 이용 안내','mint']],
+  };
+  for(const zone of ['social-all','social-daily','social-question','social-together'])examples[zone]=examples.home;
+  const previousSlot=adSlot;
+  adSlot=function(zone,inline=false){
+    if(!labels[zone])return previousSlot(zone,inline);
+    return `<aside class="ad-slot ad-placement-group ${visibility[zone]?'':'ad-disabled'}" data-zone="${zone}" aria-label="${labels[zone]} 광고 영역">
+      ${examples[zone].map(([icon,business,title,offer,tone],index)=>`<div class="ad-placement ad-example-${tone}"><div class="ad-example-icon" aria-hidden="true">${icon}</div><div class="ad-example-copy"><small>광고 예시 · ${labels[zone]} ${index===0?'A':'B'} · ${business}</small><strong>${title}</strong><p>${offer}</p></div><button class="vendor-link" type="button" onclick="openVendor('${zone}')" aria-label="${labels[zone]} ${index===0?'A':'B'} 광고 등록 안내">안내 ↗</button></div>`).join('')}</aside>`;
+  };
+  for(const zone of Object.keys(labels)){
+    document.querySelectorAll('.ad-slot[data-zone="'+zone+'"]').forEach(old=>{
+      const holder=document.createElement('div');holder.innerHTML=adSlot(zone);old.replaceWith(holder.firstElementChild);
+    });
+  }
+  const render=renderFavoriteGroups;
+  renderFavoriteGroups=function(){
+    render();
+    $('listCards').insertAdjacentHTML('beforeend',adSlot('favorites-bottom'));
+  };
+  let settingsVersion=0;
+  function apply(values){
+    settingsVersion++;
+    visibility=values;
+    document.querySelectorAll('.ad-placement-group').forEach(node=>node.classList.toggle('ad-disabled',visibility[node.dataset.zone]!==true));
+    document.querySelector('.home-business-entry')?.classList.toggle('hidden',visibility.home!==true);
+  }
+  let refreshing=false;
+  async function refresh(){
+    if(refreshing)return;refreshing=true;const version=settingsVersion;
+    try{const client=await window.tripfactAccount.client();const {data,error}=await client.rpc('tripfact_ad_visibility');if(error)throw error;if(version===settingsVersion)apply(data);}
+    catch{}finally{refreshing=false;}
+  }
+  function renderCommunity(category){
+    const anchor=document.querySelector('[data-community-ad]');if(!anchor)return;
+    const key={'':'social-all',daily:'social-daily',question:'social-question',together:'social-together'}[category];
+    anchor.innerHTML=key?adSlot(key):'';
+  }
+  window.tripfactAds={labels,refresh,apply,renderCommunity};
+  apply(visibility);
+  if(currentTab==='social'&&$('communityPage').dataset.view==='feed')renderCommunity(document.querySelector('[data-category-filter][aria-pressed=true]')?.dataset.categoryFilter||'');
+  refresh();
+  setInterval(()=>{if(!document.hidden)refresh();},30000);
+  window.addEventListener('focus',refresh);
+})();
+
+async function renderAdminAdVisibility(container,call){
+  const labels=window.tripfactAds.labels;
+  container.textContent='광고 노출 설정 불러오는 중…';
+  try{
+    const current=await call('tripfact_ad_visibility',{});
+    container.innerHTML='<p>구역마다 광고 A·B 두 자리가 함께 켜지거나 꺼집니다. 현재 표시되는 업체와 혜택은 광고 예시입니다.</p><div class="ad-visibility-controls"><button type="button" data-all-on>전체 ON</button><button type="button" data-all-off>전체 OFF</button></div><div data-zones></div><button class="primary" type="button" data-save>변경사항 저장</button><p role="status" aria-live="polite"></p>';
+    const area=container.querySelector('[data-zones]'),status=container.querySelector('[role=status]');
+    for(const [id,label]of Object.entries(labels)){
+      const row=document.createElement('label');row.className='ad-visibility-row';
+      const text=document.createElement('span');text.textContent=label;
+      const input=document.createElement('input');input.type='checkbox';input.dataset.zone=id;input.checked=current[id]===true;input.setAttribute('aria-label',label+' 광고 ON');
+      row.append(text,input);area.append(row);
+    }
+    async function save(all){
+      const inputs=[...area.querySelectorAll('input')];
+      container.querySelectorAll('button,input').forEach(node=>{node.disabled=true});status.textContent='저장 중…';
+      try{
+        const settings=await call('tripfact_admin_ad_visibility',{p_changes:inputs.map(input=>({zone_id:input.dataset.zone,enabled:typeof all==='boolean'?all:input.checked}))});
+        inputs.forEach(input=>{input.checked=settings[input.dataset.zone]===true});window.tripfactAds.apply(settings);
+        status.textContent='저장했습니다. 방문자 화면에는 최대 30초 안에 반영됩니다.';
+      }catch{status.textContent='저장하지 못했습니다. 다시 시도해 주세요.';}
+      finally{container.querySelectorAll('button,input').forEach(node=>{node.disabled=false});}
+    }
+    container.querySelector('[data-save]').onclick=()=>save();
+    container.querySelector('[data-all-on]').onclick=()=>save(true);
+    container.querySelector('[data-all-off]').onclick=()=>save(false);
+  }catch{container.textContent='Supabase에 013 광고 ON/OFF SQL을 적용한 뒤 확인해 주세요.';}
 }
 </script></body>
 </html>
