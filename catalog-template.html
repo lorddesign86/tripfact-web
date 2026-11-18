@@ -206,6 +206,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .community-page:has([data-writer] form) .community-compose-fab { display:none; }
 @media(max-width:500px){.community-page{padding:16px 16px 100px;margin-inline:-4px}.community-heading h1{font-size:26px}.community-categories{gap:22px}.community-categories button{font-size:17px}.community-feed-row{padding:18px 0 14px}.community-compose-fab{right:18px}}
 
+.community-post-open{position:relative}.community-post-open:has(.community-photo-thumb){padding-right:110px;min-height:104px}.community-photo-thumb{position:absolute;right:0;top:8px;width:92px;height:92px}.community-photo-thumb img{width:100%;height:100%;object-fit:cover;border-radius:12px}.community-photo-thumb span{position:absolute;right:5px;bottom:5px;padding:3px 7px;border-radius:8px;background:#243c34cc;color:white;font-size:12px}.community-photo-gallery{display:grid;gap:10px;margin:14px 0}.community-photo-gallery img{max-width:100%;width:100%;max-height:760px;object-fit:contain;border-radius:12px}.community-photo-previews{display:flex;gap:8px;overflow-x:auto}.community-photo-previews img{width:76px;height:76px;object-fit:cover;border-radius:10px;flex-shrink:0}
+
 #eventPosts { display:grid;grid-template-columns:minmax(0,1fr);gap:12px; }
 #eventsPage { max-width:900px;margin-inline:auto; }
 #eventsPage>.subtitle { font-size:14px; }
@@ -2368,6 +2370,19 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     bar.append(menu);
     return bar;
   }
+  function postPhotos(post,detail=false){
+    const paths=post.image_paths||[];if(!paths.length)return null;
+    const box=document.createElement('div');box.className=detail?'community-photo-gallery':'community-photo-thumb';
+    client().then(async c=>{
+      const chosen=detail?paths:paths.slice(0,1);
+      for(const path of chosen){
+        const {data,error}=await c.storage.from('tripfact-community-photos').createSignedUrl(path,300);
+        if(error||!data?.signedUrl)continue;
+        const image=document.createElement('img');image.src=data.signedUrl;image.alt='게시글 첨부 사진';image.loading='lazy';box.append(image);
+      }
+      if(!detail&&paths.length>1){const count=document.createElement('span');count.textContent='+'+(paths.length-1);box.append(count);}
+    }).catch(()=>{});return box;
+  }
   function card(post,detail=false) {
     const article=document.createElement('article');article.className='panel community-card';
     if(!detail) {
@@ -2377,6 +2392,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       const preview=post.title?post.body:lines.slice(1).join(' ');
       const open=document.createElement('button');open.type='button';open.className='community-post-open';
       open.innerHTML=`<span class="community-feed-category">${esc(categories[post.category]||(post.kind==='room'?'같이해요':'일상'))}${post.kind==='room'?' · '+(post.closed?'종료한 방':'대화방'):''}</span><h2>${esc(title)}</h2>${preview?'<p>'+esc(preview)+'</p>':''}`;
+      const thumbnail=postPhotos(post);if(thumbnail)open.append(thumbnail);
       open.onclick=()=>loadDetail(post.id);article.append(open);
       const footer=document.createElement('div');footer.className='community-feed-footer';
       const meta=document.createElement('span');meta.textContent=post.region+' · '+recentTime(post.created_at);
@@ -2388,6 +2404,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       <span class="community-tag">${esc(categories[post.category]||(post.kind==='room'?'같이해요':'일상'))}${post.kind==='room'?' · '+(post.closed?'종료한 방':'대화방')+' · '+post.members+'명':''}</span>
       ${post.title?`<h2>${esc(post.title)}</h2>`:''}
       <p class="community-body ${detail?'':'community-preview'}">${esc(post.body)}</p>`;
+    const gallery=postPhotos(post,true);if(gallery)article.append(gallery);
     article.append(tools(post,detail));
     if(post.kind==='room'&&!detail)article.append(control(post.joined?'참여 중인 방 열기':'방 둘러보기',()=>loadDetail(post.id)));
     return article;
@@ -2457,8 +2474,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         catch(error){say(error.message);}finally{state.busy=false;button.disabled=false;}
       };
       content.append(form);
-    }catch(error){if(version===state.version){say(error.message);content.replaceChildren(control('‹ 목록으로',()=>loadFeed()));
-    const heading=document.createElement('h2');heading.textContent='차단한 회원 관리';content.append(heading);}}
+    }catch(error){if(version===state.version){say(error.message);content.replaceChildren(control('‹ 목록으로',()=>loadFeed()));}}
   }
   async function compose() {
     await requireAccount();
@@ -2469,8 +2485,17 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       <label>지역<select name="region"><option>다낭 시내</option><option>미케비치</option><option>호이안</option><option>바나힐</option></select></label>
       <label data-title><span data-title-label>제목 (선택)</span><input name="title" maxlength="80" placeholder="어떤 이야기를 나누고 싶으세요?"></label>
       <label>내용<textarea name="body" maxlength="1500" rows="5" placeholder="지금 쌀국수 먹고 있어요. 다들 점심 뭐 드셨나요?" required></textarea></label>
+      <label>사진 첨부 (선택 · 최대 10장)<input type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple></label><p class="vendor-help">JPG·PNG·WebP · 한 장당 최대 2MB</p><div class="community-photo-previews"></div>
       <div class="community-actions"><button type="submit" class="primary">올리기</button><button type="button" data-cancel>취소</button></div></form>`;
     const form=writer.firstElementChild;let requestId=crypto.randomUUID();
+    form.addEventListener('input',()=>{requestId=crypto.randomUUID();});
+    form.elements.photos.onchange=()=>{
+      const preview=form.querySelector('.community-photo-previews');preview.replaceChildren();
+      for(const file of [...form.elements.photos.files].slice(0,10)){
+        if(!['image/jpeg','image/png','image/webp'].includes(file.type))continue;
+        const reader=new FileReader();reader.onload=()=>{const image=document.createElement('img');image.src=reader.result;image.alt='선택한 사진';preview.append(image);};reader.readAsDataURL(file);
+      }
+    };
     function roomChoice() {
       const together=form.elements.category.value==='together';
       form.querySelector('[data-room-choice]').hidden=!together;
@@ -2482,9 +2507,17 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     form.querySelector('[data-cancel]').onclick=()=>writer.replaceChildren();
     form.onsubmit=async event=> {
       event.preventDefault();if(state.busy||!form.reportValidity())return;
-      state.busy=true;const submit=form.querySelector('[type=submit]');submit.disabled=true;
+      state.busy=true;const submit=form.querySelector('[type=submit]');submit.disabled=true;form.inert=true;
       try {
-        const data=Object.fromEntries(new FormData(form));
+        const photos=[...form.elements.photos.files];
+        if(photos.length>10||photos.some(file=>file.size>2097152||!['image/jpeg','image/png','image/webp'].includes(file.type)))throw new Error('사진은 2MB 이하 JPG·PNG·WebP로 최대 10장까지 첨부해 주세요.');
+        const c=await client(),{data:auth,error:authError}=await c.auth.getSession();if(authError||!auth.session)throw new Error('다시 로그인해 주세요.');
+        const paths=photos.map((_,i)=>auth.session.user.id+'/'+requestId+'/'+i);
+        for(const [i,file] of photos.entries()){
+          const {error}=await c.storage.from('tripfact-community-photos').upload(paths[i],file,{contentType:file.type});
+          if(error&&String(error.statusCode)!=='409'&&error.error!=='Duplicate')throw new Error('사진을 올리지 못했습니다. 다시 시도해 주세요.');
+        }
+        const data=Object.fromEntries(new FormData(form));delete data.photos;data.images=paths;
         data.kind=data.category==='together'&&form.elements.room.checked?'room':'daily';
         await action('create',requestId,data);writer.replaceChildren();
         page.querySelector('[data-region]').value='';state.category='';
@@ -2492,7 +2525,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         page.querySelector('[data-mine]').setAttribute('aria-pressed','false');
         await loadDetail(requestId);
         refreshHomeBoards();
-      }catch(error){say(error.message);}finally{state.busy=false;submit.disabled=false;}
+      }catch(error){say(error.message);}finally{state.busy=false;submit.disabled=false;form.inert=false;}
     };
     form.scrollIntoView({block:'nearest'});form.elements.body.focus();
   }
