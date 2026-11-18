@@ -1390,8 +1390,8 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     try {
       await connect();
       const {client} = accountState();
-      let query = client.from('tripfact_events').select('id,business_name,category,title,body,appeal,inquiry_url,image_paths,created_at,starts_on,ends_on')
-        .eq('city_slug','danang').gte('ends_on',today()).order('created_at',{ascending:false}).order('id',{ascending:false}).limit(listLimit+1);
+      let query = client.from('tripfact_events').select('id,business_name,category,title,body,appeal,inquiry_url,image_paths,created_at')
+        .eq('city_slug','danang').order('created_at',{ascending:false}).order('id',{ascending:false}).limit(listLimit+1);
       if (filter !== '전체') query = query.eq('category',filter);
       const rows = await checked(query);
       if (version !== listingVersion) return;
@@ -1411,7 +1411,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         content.textContent = post.body;
         const appeal=document.createElement('p');appeal.className='hotdeal-appeal';appeal.textContent=post.appeal;
         const period=document.createElement('small');period.className='hotdeal-period';
-        period.textContent=(post.starts_on>today()?'예정 · ':'')+post.starts_on+' ~ '+post.ends_on;
+        period.textContent=new Date(post.created_at).toLocaleDateString('ko-KR',{timeZone:'Asia/Ho_Chi_Minh'})+' 등록';
         info.append(metadata,heading,appeal,content,period);
         const photos = document.createElement('div');
         photos.className = 'live-event-photos';
@@ -1467,18 +1467,16 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       const [{daily_points:regularFee}, points] = await Promise.all([getFee(), checked(client.rpc('tripfact_my_points'))]);
       const fee=operator?0:regularFee;
       writer.innerHTML = `<h2 style="font-size:17px">핫딜 등록</h2>
-        <p><b>${escapeHTML(operator?'다낭 트립팩트 · 운영자':profile.business_name)}</b></p>
-        ${operator?'<p class="vendor-help">운영자 등록 0P · 일반 업체 등록비 '+Number(regularFee).toLocaleString('ko-KR')+'P</p>':''}
-        <p class="vendor-help">등록비 <strong>${Number(fee).toLocaleString('ko-KR')}P / 건</strong> · 잔여 ${Number(points).toLocaleString('ko-KR')}P</p>
-        <form><label class="field" for="liveEventTitle">프로모션 제목</label><input id="liveEventTitle" name="title" maxlength="70" required placeholder="예: 평일 오전 방문 시 20% 할인">
+        ${operator?'':'<p class="vendor-help">등록비 <strong>'+Number(fee).toLocaleString('ko-KR')+'P / 건</strong> · 잔여 '+Number(points).toLocaleString('ko-KR')+'P</p>'}
+        <form><label class="field" for="liveEventBusiness">업체명</label><input id="liveEventBusiness" name="business" maxlength="100" value="${escapeHTML(profile?.business_name||'')}" required placeholder="업체명을 입력해 주세요">
+        <label class="field" for="liveEventTitle">프로모션 제목</label><input id="liveEventTitle" name="title" maxlength="70" required placeholder="예: 평일 오전 방문 시 20% 할인">
         <label class="field" for="liveEventAppeal">한 줄 어필 문장</label><input id="liveEventAppeal" name="appeal" maxlength="100" required placeholder="예: 미케비치에서 도보 3분, 한국어 예약 가능">
         <label class="field" for="liveEventBody">혜택·가격·이용 조건</label><textarea id="liveEventBody" name="body" rows="5" maxlength="3000" required placeholder="할인 전후 가격, 포함 서비스와 제외 조건을 적어 주세요."></textarea>
-        <div class="hotdeal-dates"><label>시작일<input type="date" name="start" value="${today()}" required></label><label>종료일<input type="date" name="end" min="${today()}" value="${today()}" required></label></div>
         <label class="field" for="liveEventInquiry">예약 카카오톡 링크</label><input id="liveEventInquiry" name="inquiry" type="url" maxlength="2048" placeholder="https://pf.kakao.com/… 또는 https://open.kakao.com/…" required>
         <label class="field" for="liveEventCategory">업종</label><select id="liveEventCategory" name="category">${categories.map(c=>'<option>'+c+'</option>').join('')}</select>
-        <label class="field" for="liveEventFiles">이미지 1~2장 · 첫 번째가 대표 이미지</label><input id="liveEventFiles" type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required>
+        <label class="field" for="liveEventFiles">이미지 1~10장 · 첫 번째가 대표 이미지</label><input id="liveEventFiles" type="file" name="photos" accept="image/jpeg,image/png,image/webp" multiple required>
         <p class="vendor-help">JPG, PNG, WebP · 한 장당 최대 2MB</p>
-        <div class="member-profile-actions"><button type="submit" class="primary">${Number(fee).toLocaleString('ko-KR')}P 사용하고 등록</button>
+        <div class="member-profile-actions"><button type="submit" class="primary">${operator?'등록하기':Number(fee).toLocaleString('ko-KR')+'P 사용하고 등록'}</button>
         <button type="button" class="vendor-link" data-cancel>취소</button></div><p role="status"></p></form>`;
       const form = writer.querySelector('form');
       const status = form.querySelector('[role=status]');
@@ -1492,16 +1490,16 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         const values = new FormData(form);
         const title = String(values.get('title')).trim();
         const body = String(values.get('body')).trim();
-        const appeal=String(values.get('appeal')).trim(),start=String(values.get('start')),end=String(values.get('end'));
+        const appeal=String(values.get('appeal')).trim(),business=String(values.get('business')).trim();
         const url = inquiryLink(values.get('inquiry'));
         const photos = [...$('liveEventFiles').files];
-        if (!title || !body || !appeal || !url || url.length > 2048 || !start || end<start || end<today()) {
-          status.textContent = '제목·어필 문장·혜택·이용 기간과 올바른 카카오톡 링크를 확인해 주세요.';
+        if (!business || !title || !body || !appeal || !url || url.length > 2048) {
+          status.textContent = '업체명·제목·어필 문장·혜택과 올바른 카카오톡 링크를 확인해 주세요.';
           return;
         }
-        if (photos.length < 1 || photos.length > 2 || photos.some(photo => photo.size > 2097152 ||
+        if (photos.length < 1 || photos.length > 10 || photos.some(photo => photo.size > 2097152 ||
           !['image/jpeg','image/png','image/webp'].includes(photo.type))) {
-          status.textContent = '2MB 이하 JPG, PNG, WebP 이미지를 최대 2장 선택해 주세요.';
+          status.textContent = '2MB 이하 JPG, PNG, WebP 이미지를 최대 10장 선택해 주세요.';
           return;
         }
         const id = eventId;
@@ -1513,12 +1511,12 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
             const {error} = await client.storage.from(bucket).upload(paths[index],photo,{contentType:photo.type});
             if (error && String(error.statusCode) !== '409' && error.error !== 'Duplicate') throw new Error(error.message);
           }
-          const paid = await checked(client.rpc('tripfact_publish_hotdeal',{
+          const paid = await checked(client.rpc('tripfact_publish_hotdeal_post',{
             p_id:id,p_category:values.get('category'),p_title:title,p_body:body,p_inquiry_url:url,
-            p_images:paths,p_expected_points:fee,p_appeal:appeal,p_start:start,p_end:end,
+            p_images:paths,p_expected_points:fee,p_appeal:appeal,p_business_name:business,
           }));
           writer.classList.add('hidden');
-          toast('핫딜을 등록했습니다. ' + Number(paid).toLocaleString('ko-KR') + 'P 사용');
+          toast(operator?'핫딜을 등록했습니다.':'핫딜을 등록했습니다. ' + Number(paid).toLocaleString('ko-KR') + 'P 사용');
           filter = '전체';
           renderEvents();
           updateMemberHeader();
@@ -1796,7 +1794,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       checked(client.from('tripfact_topups').select(requestFields).eq('user_id',session.user.id)
         .order('submitted_at',{ascending:false}).limit(30)),
     ]);
-    $('memberContent').innerHTML = section(admin ? '운영자 업체센터' : esc(profile.business_name), `<p>적립 포인트 <strong>${money(points)} P</strong></p>${admin?'<p>운영자는 모든 업체 화면을 확인할 수 있습니다. 운영자 핫딜은 트립팩트 명의로 0P에 등록됩니다.</p><div class="member-profile-actions"><button class="primary" id="adminBusinessDashboard">관리자 화면</button><button class="vendor-link" id="adminBusinessHotdeal">핫딜 등록</button></div>':''}`) +
+    $('memberContent').innerHTML = section(admin ? '운영자 업체센터' : esc(profile.business_name), `<p>적립 포인트 <strong>${money(points)} P</strong></p>${admin?'<p>운영자는 업체 화면을 확인하고 핫딜을 등록할 수 있습니다.</p><div class="member-profile-actions"><button class="primary" id="adminBusinessDashboard">관리자 화면</button><button class="vendor-link" id="adminBusinessHotdeal">핫딜 등록</button></div>':''}`) +
       section('계좌이체 충전 신청', config.bank || admin ? `${config.bank?'<p>입금 계좌 <strong>'+esc(config.bank)+'</strong></p>':'<p>입금 계좌가 설정되지 않았습니다. Vercel의 TRIPFACT_DEPOSIT_ACCOUNT를 등록하면 충전 신청을 사용할 수 있습니다.</p>'}
         <form id="topupForm"><div class="filter-row">${presets.map(n=>`<button type="button" data-amount="${n}">${money(n)}원</button>`).join('')}</div>
         ${field('topupAmount','충전 금액 (원)','type="number" inputmode="numeric" min="1" max="100000000" step="1" required')}
