@@ -58,6 +58,10 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 
 .member-point-balance{color:#18785c;white-space:nowrap}.admin-point-editor{flex-basis:100%;width:100%;padding:16px;background:#f3f7ef;border-radius:12px}.admin-point-editor [data-preview],.admin-point-editor [role=status]{grid-column:1/-1}.point-adjustment-record{padding:12px 0;border-bottom:1px solid var(--line)}.point-adjustment-record p{margin:5px 0}
 
+.booking-quote,.booking-agree,.campaign-form>[data-status]{grid-column:1/-1}.booking-quote{padding:14px;background:#eaf3e4;border-radius:12px;font-weight:700}.header>.vendor-link:not(.member-entry){font-size:12px}#adminSupportAccount .rate-tools label{flex:1}#adminSupportAccount input{width:100%}
+
+#adminMembers{max-width:none}#adminMembers .admin-member-row{display:grid;grid-template-columns:28px minmax(140px,1fr) auto;gap:12px;align-items:center;padding:12px 0;margin:0;border-bottom:1px solid var(--line)}.member-row-number{font-size:12px;color:#7a8c82;text-align:center}.member-row-info{min-width:0;display:flex;flex-direction:column;gap:3px;line-height:1.4;font-size:12px}.member-row-info>div{font-size:11px;color:#6b7c73;overflow-wrap:anywhere}.member-row-info>b{font-size:13px}.member-row-info .member-point-balance{font-size:12px}.member-row-management{display:flex;align-items:center;gap:5px;flex-wrap:nowrap;justify-content:flex-end}.member-row-management .member-profile-actions{display:contents}.member-row-management button{padding:6px 8px;font-size:11px;min-height:30px;white-space:nowrap}#adminMembers .admin-member-row>.admin-member-editor,#adminMembers .admin-member-row>.admin-point-editor{grid-column:1/-1;margin-top:4px}@media(max-width:850px){#adminMembers .admin-member-row{grid-template-columns:24px minmax(0,1fr);gap:7px}.member-row-management{grid-column:2/-1;justify-content:flex-start;overflow-x:auto;padding-bottom:3px;max-width:100%}.member-row-management button{flex-shrink:0}}
+
 .desktop-nav{gap:clamp(12px,2vw,26px)}
 .desktop-nav button{font-size:16px;color:#456254;white-space:nowrap}
 .quick button,.shop-categories button,.directory-cats button{font-size:14px}
@@ -1351,9 +1355,13 @@ function renderAdminMembers(container, queryMembers, updateMember, pointControls
       status.textContent = data.members.length
         ? `${data.matches}명 중 ${offset + 1}~${offset + data.members.length}명 · 가입 시각 한국 기준`
         : '조회된 회원이 없습니다.';
-      for (const member of data.members) {
+      for (const [index,member] of data.members.entries()) {
         const row = document.createElement('div');
-        row.className = 'booking-row';
+        row.className = 'booking-row admin-member-row';
+        const number=document.createElement('span');number.className='member-row-number';number.textContent=String(offset+index+1);
+        const info=document.createElement('div');info.className='member-row-info';
+        const management=document.createElement('div');management.className='member-row-management';
+        row.append(number,info,management);
         const name = document.createElement('b');
         name.textContent = member.display_name || member.business_name || member.email || '이메일 없음';
         const details = document.createElement('div');
@@ -1361,22 +1369,22 @@ function renderAdminMembers(container, queryMembers, updateMember, pointControls
           member.email_confirmed_at ? '이메일 확인' : '이메일 미확인',
           type === 'business' ? (member.business_approved ? '업체 승인' : '승인 대기') : '',
         ].filter(Boolean).join(' · ');
-        row.append(name, details);
+        info.append(name, details);
         if(member.member_type==='business'){
-          const balance=document.createElement('strong');balance.className='member-point-balance';balance.textContent=member.points==null?'보유 포인트 확인 필요':'보유 포인트 '+Number(member.points).toLocaleString('ko-KR')+'P';row.append(balance);
+          const balance=document.createElement('strong');balance.className='member-point-balance';balance.textContent=member.points==null?'보유 포인트 확인 필요':'보유 포인트 '+Number(member.points).toLocaleString('ko-KR')+'P';info.append(balance);
           if(pointControls){const controls=document.createElement('div');controls.className='member-profile-actions';
             for(const [mode,label] of [['add','포인트 지급'],['subtract','포인트 차감'],['history','조정 내역']]){
               const button=document.createElement('button');button.type='button';button.className='vendor-link';button.textContent=label;button.disabled=member.points==null;
               button.onclick=()=>{container.querySelectorAll('.admin-member-editor,.admin-point-editor').forEach(n=>n.remove());renderAdminPointAdjustment(row,member,mode,pointControls,load);};controls.append(button);
-            }row.append(controls);
+            }management.append(controls);
           }
         }
         if(updateMember){
           const actions=document.createElement('div');actions.className='member-profile-actions';
           for(const [action,label] of [['info','정보 수정'],['password','비밀번호 변경']]){
             const button=document.createElement('button');button.type='button';button.className='vendor-link';button.textContent=label;
-            button.onclick=()=>{container.querySelectorAll('.admin-member-editor').forEach(n=>n.remove());renderAdminMemberEditor(row,member,action,updateMember,load);};actions.append(button);
-          }row.append(actions);
+            button.onclick=()=>{container.querySelectorAll('.admin-member-editor,.admin-point-editor').forEach(n=>n.remove());renderAdminMemberEditor(row,member,action,updateMember,load);};actions.append(button);
+          }management.append(actions);
         }
         results.append(row);
       }
@@ -1430,7 +1438,7 @@ function renderAdminPointUsage(container,call){
   async function load(){const current=++version;prev.disabled=next.disabled=true;status.textContent='불러오는 중…';
     try{const data=await call('tripfact_admin_point_usage',{p_offset:offset});if(current!==version)return;
       container.querySelector('[data-summary]').textContent='총 '+Number(data.total).toLocaleString('ko-KR')+'건 · '+Number(data.points).toLocaleString('ko-KR')+'P 사용';
-      container.querySelector('[data-rows]').innerHTML=data.rows.length?'<table><thead><tr><th>업체명</th><th>사용 구분</th><th>제목</th><th>사용 포인트</th><th>사용 일시</th></tr></thead><tbody>'+data.rows.map(r=>'<tr><td>'+escapeHTML(r.business_name)+'</td><td>'+(r.deal_tier==='super'?'슈퍼핫딜':'핫딜')+'</td><td>'+escapeHTML(r.title)+'</td><td>−'+Number(r.points_spent).toLocaleString('ko-KR')+'P</td><td>'+escapeHTML(new Date(r.created_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))+'</td></tr>').join('')+'</tbody></table>':'아직 사용 내역이 없습니다.';
+      container.querySelector('[data-rows]').innerHTML=data.rows.length?'<table><thead><tr><th>업체명</th><th>사용 구분</th><th>제목</th><th>사용 포인트</th><th>사용 일시</th></tr></thead><tbody>'+data.rows.map(r=>'<tr><td>'+escapeHTML(r.business_name)+'</td><td>'+({super:'슈퍼핫딜',banner:'배너 광고',hotdeal:'핫딜'}[r.deal_tier]||'핫딜')+'</td><td>'+escapeHTML(r.title)+'</td><td>−'+Number(r.points_spent).toLocaleString('ko-KR')+'P</td><td>'+escapeHTML(new Date(r.created_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))+'</td></tr>').join('')+'</tbody></table>':'아직 사용 내역이 없습니다.';
       status.textContent='';prev.disabled=offset===0;next.disabled=offset+data.rows.length>=Number(data.total);
     }catch{status.textContent='사용 내역을 불러오지 못했습니다. 022 포인트 통계 SQL 적용 여부를 확인해 주세요.';}}
   prev.onclick=()=>{offset=Math.max(0,offset-30);load();};next.onclick=()=>{offset+=30;load();};load();
@@ -1693,7 +1701,9 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
 (() => {
   let client, config, session, profile, admin = false;
   let previousPending = new Set();
-  let refreshTimer;
+  let refreshTimer,adminNoticeTimer;
+  const adminNotice=document.createElement('button');adminNotice.className='vendor-link hidden';adminNotice.type='button';
+  adminNotice.onclick=async()=>{await showPage('admin');document.querySelector('[aria-controls="admin-category-support"]')?.click();};
   const presets = [10000, 50000, 100000, 300000, 500000];
   const pane = document.createElement('div');
   pane.id = 'memberPage';
@@ -1705,7 +1715,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
   button.className = 'vendor-link member-entry';
   button.textContent = '로그인 · 가입';
   button.onclick = () => showPage('account');
-  document.querySelector('.header').append(button);
+  document.querySelector('.header').append(adminNotice,button);
   const originalSwitch = switchTab;
   switchTab = function (tab) {
     pane.classList.add('hidden');
@@ -1794,7 +1804,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     session = (await checked(client.auth.getSession())).session;
     profile = null;
     admin = false;
-    if (!session) { updateMemberHeader(); return; }
+    if (!session) {clearInterval(adminNoticeTimer);adminNoticeTimer=null;adminNotice.classList.add('hidden');updateMemberHeader();return;}
     const [member, allowed] = await Promise.all([
       checked(client.from('tripfact_profiles').select('member_type,business_name,business_approved')
         .eq('user_id', session.user.id).maybeSingle()),
@@ -1802,6 +1812,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     ]);
     profile = member;
     admin = allowed === true;
+    if(admin){if(!adminNoticeTimer)adminNoticeTimer=setInterval(pollAlerts,30000);pollAlerts();}else{clearInterval(adminNoticeTimer);adminNoticeTimer=null;adminNotice.classList.add('hidden');}
     updateMemberHeader();
   }
   function authForm(signup = false) {
@@ -1858,7 +1869,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       <div class="member-profile-actions">
         <button class="vendor-link" id="editMemberInfo">내 정보 수정</button>
         <button class="vendor-link" id="editMemberPhoto">프로필 사진 수정</button>
-        <button class="vendor-link" id="manageBlockedMembers">차단한 회원 관리</button>
+        ${profile?.member_type==='business'?'':'<button class="vendor-link" id="manageBlockedMembers">차단한 회원 관리</button>'}
       </div>
       ${admin || profile?.member_type === 'business' ? '<button class="primary" id="openTopups">업체센터</button>' : ''}
       ${admin ? '<button class="vendor-link" id="adminOpenHotdeal">핫딜 등록 화면</button>' : ''}
@@ -1866,7 +1877,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       <button class="vendor-link" id="memberSignOut">로그아웃</button>`);
     $('editMemberInfo').onclick = () => showPage('info');
     $('editMemberPhoto').onclick = () => showPage('photo');
-    $('manageBlockedMembers').onclick = () => window.tripfactOpenBlockedMembers?.();
+    if($('manageBlockedMembers'))$('manageBlockedMembers').onclick = () => window.tripfactOpenBlockedMembers?.();
     $('memberSignOut').onclick = async () => {
       try { await checked(client.auth.signOut()); await showPage('account'); }
       catch (error) { message(error.message); }
@@ -1930,18 +1941,19 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       .is('approved_at', null).order('submitted_at').limit(100));
   }
   async function pollAlerts() {
-    if (!admin || pane.classList.contains('hidden')) return;
+    if (!admin || document.hidden) return;
     try {
       const items = await pendingRequests();
       const next = new Set(items.map(row => row.id));
       const newCount = items.filter(row => !previousPending.has(row.id)).length;
       previousPending = next;
+      adminNotice.textContent='후원 통보 '+items.length+'건';adminNotice.classList.toggle('hidden',!items.length);
       for (const id of ['adminAlertCount','adminPendingCount']) {
         if ($(id)) $(id).textContent = items.length ? `(${items.length === 100 ? '100+' : items.length}건 대기)` : '';
       }
       if (newCount) toast(`확인할 후원 신청 ${newCount}건이 있습니다.`);
       if ($('adminPendingRows')) drawPending(items);
-    } catch (error) { message(error.message); }
+    } catch (error) {if(!pane.classList.contains('hidden'))message(error.message);}
   }
   let businessCategory='statistics';
   async function business() {
@@ -1950,18 +1962,19 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         '<p>' + (profile?.member_type === 'business' ? '업체 가입 확인을 기다리고 있습니다.' : '업체회원으로 가입한 뒤 이용할 수 있습니다.') + '</p>');
       return;
     }
+    try{const saved=await checked(client.rpc('tripfact_support_account'));if(saved.configured)config.bank=saved.bank;}catch{}
     const [points, history] = await Promise.all([
       checked(client.rpc('tripfact_my_points')),
       checked(client.from('tripfact_topups').select(requestFields).eq('user_id',session.user.id)
         .order('submitted_at',{ascending:false}).limit(30)),
     ]);
-    $('memberContent').innerHTML = section(admin ? '운영자 업체센터' : esc(profile.business_name), `<p>적립 포인트 <strong>${money(points)} P</strong></p>${admin?'<p>운영자는 업체 화면을 확인하고 핫딜을 등록할 수 있습니다.</p><div class="member-profile-actions"><button class="primary" id="adminBusinessDashboard">관리자 화면</button><button class="vendor-link" id="adminBusinessHotdeal">핫딜 등록</button></div>':''}`) +
-      section('후원하기', config.bank || admin ? `<p>우리 커뮤니티는 후원으로 운영됩니다.</p>${config.bank?'<p>후원 계좌 <strong>'+esc(config.bank)+'</strong></p>':'<p>후원 계좌가 아직 설정되지 않았습니다. 계좌 설정 후 후원하기를 이용할 수 있습니다.</p>'}
+    $('memberContent').innerHTML = section(admin ? '운영자 업체센터' : esc(profile.business_name), `<p>보유 포인트 <strong>${money(points)} P</strong> <button type="button" class="vendor-link" id="refreshBusiness">새로고침</button></p>${admin?'<p>운영자는 업체 화면을 확인하고 핫딜을 등록할 수 있습니다.</p><div class="member-profile-actions"><button class="primary" id="adminBusinessDashboard">관리자 화면</button><button class="vendor-link" id="adminBusinessHotdeal">핫딜 등록</button></div>':''}`) +
+      section('후원하기', `<p>우리 커뮤니티는 후원으로 운영됩니다.</p>${config.bank?'<p>후원 계좌 <strong>'+esc(config.bank)+'</strong></p>':'<p>후원 계좌가 아직 설정되지 않았습니다. 계좌 설정 후 후원하기를 이용할 수 있습니다.</p>'}
         <form id="topupForm"><div class="filter-row">${presets.map(n=>`<button type="button" data-amount="${n}">+${n/10000}만 원</button>`).join('')}<button type="button" data-reset-amount>초기화</button></div><p class="vendor-help">버튼을 누를 때마다 후원 금액이 더해집니다. 직접 입력할 수도 있습니다.</p>
         ${field('topupAmount','후원 금액 (원)','type="number" inputmode="numeric" min="1" max="100000000" step="1" required')}
         ${field('topupDepositor','후원자명','maxlength="60" required')}
         <label style="display:block;margin:12px 0"><input type="checkbox" required style="width:auto"> 위 계좌로 후원금을 보냈습니다.</label>
-        <button class="primary" type="submit" ${config.bank?'':'disabled'}>후원 신청하기</button></form>` : '<p>후원 계좌 안내를 준비하고 있습니다.</p>') +
+        <button class="primary" type="submit" ${config.bank?'':'disabled'}>후원 통보하기</button></form>`) +
       section('내 후원 내역', history.length ? history.map(row => `<div class="booking-row"><b>${money(row.amount_krw)}원 · ${row.approved_at?'승인 완료':'후원 확인 대기'}</b>
         ${esc(new Date(row.submitted_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))}</div>`).join('') : '<p>신청 내역이 없습니다.</p>') +
       section('광고 요금', '<p>기본 30일 · 장기 90일입니다. 90일 이용료는 30일의 3배입니다. 집행 일정은 운영자에게 문의해 주세요.</p><div id="businessAdRates"></div>');
@@ -1969,6 +1982,8 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     renderBusinessWorkspace($('memberContent'),businessPanels,businessCategory,key=>{businessCategory=key;});
     renderAdvertiserStatistics($('businessStatistics'),(name,args)=>checked(client.rpc(name,args)));
     renderAdvertiserCampaignList($('businessCampaigns'),(name,args)=>checked(client.rpc(name,args)));
+    renderBusinessBooking($('businessBooking'),(name,args)=>checked(client.rpc(name,args)),client,async()=>{await business();updateMemberHeader();window.tripfactCampaigns.refresh();});
+    $('refreshBusiness').onclick=()=>business();
     loadAdRates($('businessAdRates'), false);
     if(admin){$('adminBusinessDashboard').onclick=()=>showPage('admin');$('adminBusinessHotdeal').onclick=()=>openEventWriter();}
     const form = $('topupForm');
@@ -1994,7 +2009,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         if (details !== submittedDetails) { submittedKey = crypto.randomUUID(); submittedDetails = details; }
         await checked(client.rpc('tripfact_request_topup', {p_amount:amount,p_depositor:depositor,p_key:submittedKey}));
         await business();
-        message('후원 신청이 접수됐습니다. 후원 확인 후 포인트가 적립됩니다.');
+        message('후원 통보가 접수됐습니다. 관리자 확인 후 포인트가 적립됩니다.');
       });
     };
   }
@@ -2082,7 +2097,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       section('광고 구역 ON/OFF', '<div id="adminAdVisibility"></div>') +
       section('AI 여행정보 · 자동 글·이미지', '<div id="adminArticles"></div>') +
       section('지금 다낭 신고 관리', '<div id="adminSocial"></div>') +
-      section('후원 신청 <span id="adminPendingCount"></span>', '<div id="adminPendingRows"></div>') +
+      section('후원 신청 <span id="adminPendingCount"></span>', '<div id="adminSupportAccount"></div><h3>후원 통보 내역</h3><div id="adminPendingRows"></div>') +
       section('업체 가입 확인', businesses.length ? businesses.map(row => `<div class="booking-row">
         ${esc(row.business_name)} <button class="vendor-link" data-business="${esc(row.user_id)}">업체 승인</button></div>`).join('') : '<p>확인할 업체가 없습니다.</p>') +
       section('포인트 지급 내역', credits.length ? credits.map(row => `<div class="booking-row">
@@ -2105,6 +2120,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         finally { control.disabled = false; }
       };
     });
+    renderAdminSupportAccount($('adminSupportAccount'),(name,args)=>checked(client.rpc(name,args)));
     renderAdminCampaigns($('adminCampaigns'),(name,args)=>checked(client.rpc(name,args)),advertisers);
     renderAdminFinance($('adminFinance'),(name,args)=>checked(client.rpc(name,args)));
     renderAdminPointUsage($('adminPointUsage'),(name,args)=>checked(client.rpc(name,args)));
@@ -3164,7 +3180,7 @@ async function renderAdminAdVisibility(container,call){
   document.addEventListener('click',e=>{const node=e.target.closest('[data-campaign]');if(node)track(node,'click');},true);
   document.addEventListener('visibilitychange',()=>{if(document.hidden){document.querySelectorAll('[data-campaign]').forEach(node=>clearTimeout(timers.get(node)));flush();}else{document.querySelectorAll('[data-campaign]').forEach(node=>{observer.unobserve(node);observer.observe(node);});scan();}});
   let refreshing=false;
-  async function refresh(){if(refreshing)return;refreshing=true;try{const client=await window.tripfactAccount.client();const {data,error}=await client.rpc('tripfact_live_campaigns');if(error)throw error;live=new Map(data.map(row=>[row.zone_id,row]));
+  async function refresh(){if(refreshing)return;refreshing=true;try{const client=await window.tripfactAccount.client();const {data,error}=await client.rpc('tripfact_live_campaigns');if(error)throw error;live=new Map(data.map(row=>[row.zone_id,{...row,image_url:row.image_path?client.storage.from('tripfact-banner-photos').getPublicUrl(row.image_path).data.publicUrl:row.image_url}]));
     document.querySelectorAll('.ad-placement-group').forEach(old=>{const holder=document.createElement('div');holder.innerHTML=adSlot(old.dataset.zone);old.replaceWith(holder.firstElementChild);});scan();
   }catch{}finally{refreshing=false;}}
   setInterval(flush,5000);setInterval(()=>{if(!document.hidden)refresh();},60000);window.tripfactCampaigns={refresh};refresh();
@@ -3202,13 +3218,47 @@ function renderBusinessWorkspace(container,sections,selected,onSelect){
   const panels=new Map(),buttons=new Map();
   const stats=document.createElement('section');stats.className='panel';stats.innerHTML='<h2>통계</h2><div id="businessStatistics"></div>';
   const support=document.createElement('div');support.append(sections[1],sections[2]);
-  const campaigns=document.createElement('div');const own=document.createElement('section');own.className='panel';own.innerHTML='<h2>광고 집행</h2><div id="businessCampaigns"></div>';campaigns.append(own,sections[3]);
+  const campaigns=document.createElement('div');const own=document.createElement('section');own.className='panel';own.innerHTML='<h2>광고 집행</h2><div id="businessBooking"></div><h3>집행 내역</h3><div id="businessCampaigns"></div>';campaigns.append(own,sections[3]);
   function select(key){for(const [id,panel] of panels)panel.hidden=id!==key;for(const [id,button] of buttons)button.setAttribute('aria-pressed',String(id===key));onSelect(key);}
   for(const [key,title,panel] of [['statistics','통계',stats],['support','후원하기',support],['campaigns','광고 집행',campaigns]]){const button=document.createElement('button');button.type='button';button.className='vendor-link';button.textContent=title;button.onclick=()=>select(key);nav.append(button);panels.set(key,panel);buttons.set(key,button);}
   shell.append(nav,stats,support,campaigns);container.replaceChildren(sections[0],shell);select(panels.has(selected)?selected:'statistics');
 }
 async function renderAdvertiserCampaignList(container,call){
-  container.textContent='불러오는 중…';try{const data=await call('tripfact_advertiser_stats',{p_days:30});const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());container.innerHTML=data.campaigns.length?data.campaigns.map(c=>'<div class="booking-row"><b>'+escapeHTML(c.title)+'</b><span>'+escapeHTML(window.tripfactAds.rateZones.find(z=>z.id===c.zone_id)?.name||c.zone_id)+'</span><span>'+escapeHTML(c.starts_on)+' ~ '+escapeHTML(c.ends_on)+'</span><span>'+(!c.enabled?'중지':c.starts_on>today?'예정':c.ends_on<today?'종료':'진행 중')+'</span></div>').join(''):'등록된 광고가 없습니다.';}catch{container.textContent='광고 집행 내역을 불러오지 못했습니다.';}
+  container.textContent='불러오는 중…';try{const data=await call('tripfact_advertiser_stats',{p_days:30});const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());container.innerHTML=data.campaigns.length?data.campaigns.map(c=>'<div class="booking-row"><b>'+escapeHTML(c.title)+'</b><span>'+escapeHTML(window.tripfactAds.rateZones.find(z=>z.id===c.zone_id)?.name||c.zone_id)+'</span><span>'+escapeHTML(c.starts_on)+' ~ '+escapeHTML(c.ends_on)+'</span><span>'+Number(c.points_spent||0).toLocaleString('ko-KR')+'P · '+(!c.enabled?'중지':c.starts_on>today?'예정':c.ends_on<today?'종료':'진행 중')+'</span></div>').join(''):'등록된 광고가 없습니다.';}catch{container.textContent='광고 집행 내역을 불러오지 못했습니다.';}
+}
+
+async function renderBusinessBooking(container,call,client,onBooked){
+  container.textContent='예약 가능한 광고 자리를 확인하는 중…';
+  try{
+    const data=await call('tripfact_ad_booking_options',{});
+    if(!data.slots.length){container.textContent='현재 예약 가능한 광고 자리가 없습니다.';return;}
+    container.innerHTML='<form class="campaign-form"><label>광고 자리<select name="zone" required></select></label><label>기간<select name="days"><option value="30">30일</option><option value="90">90일</option></select></label><p data-quote class="booking-quote"></p><label>광고 제목<input name="title" maxlength="80" required></label><label>설명<input name="body" maxlength="160"></label><label>연결 주소<input name="link" type="url" placeholder="https://…" required></label><label>대표 이미지 (선택)<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label><p class="vendor-help">이미지 한 장 · 최대 2MB · 예약은 앞 광고가 끝난 다음 날부터 이어집니다.</p><label class="booking-agree"><span><input type="checkbox" name="agree" required style="width:auto"> 집행 기간과 차감 포인트를 확인했습니다.</span></label><button class="primary" type="submit">광고 집행 등록</button><p data-status role="status"></p></form>';
+    const form=container.querySelector('form'),status=form.querySelector('[data-status]');let id=crypto.randomUUID();
+    const labels=new Map(window.tripfactAds.rateZones.map(r=>[r.id,r.name]));
+    for(const slot of data.slots){const option=document.createElement('option');option.value=slot.zone_id;option.textContent=labels.get(slot.zone_id)||slot.zone_id;form.elements.zone.append(option);}
+    function quote(){const slot=data.slots.find(s=>s.zone_id===form.elements.zone.value),days=Number(form.elements.days.value),fee=data.operator?0:Number(slot.monthly_points)*(days/30),end=new Date(slot.next_start+'T00:00:00Z');end.setUTCDate(end.getUTCDate()+days-1);form.querySelector('[data-quote]').textContent=slot.next_start+' ~ '+end.toISOString().slice(0,10)+' · '+fee.toLocaleString('ko-KR')+'P 차감 · 보유 '+Number(data.balance).toLocaleString('ko-KR')+'P';return {slot,days,fee};}
+    form.elements.zone.onchange=()=>{form.elements.agree.checked=false;quote();};form.elements.days.onchange=()=>{form.elements.agree.checked=false;quote();};quote();
+    form.addEventListener('input',()=>{id=crypto.randomUUID();});
+    form.onsubmit=async e=>{
+      e.preventDefault();if(!form.reportValidity())return;const {slot,days,fee}=quote(),values=new FormData(form),file=form.elements.photo.files[0];
+      if(fee>Number(data.balance)){status.textContent='포인트가 부족합니다. 후원하기에서 포인트 적립 후 신청해 주세요.';return;}
+      let link;try{link=new URL(values.get('link'));if(link.protocol!=='https:')throw Error();}catch{status.textContent='https://로 시작하는 연결 주소를 입력해 주세요.';return;}
+      if(file&&(file.size>2097152||!['image/jpeg','image/png','image/webp'].includes(file.type))){status.textContent='2MB 이하 JPG·PNG·WebP 이미지를 선택해 주세요.';return;}
+      const title=String(values.get('title')).trim();if(!title){status.textContent='광고 제목을 입력해 주세요.';return;}
+      const button=form.querySelector('[type=submit]');button.disabled=true;form.inert=true;status.textContent='예약과 포인트 차감을 처리하는 중…';
+      try{
+        let path='';if(file){const {data:auth,error}=await client.auth.getSession();if(error||!auth.session)throw new Error('다시 로그인해 주세요.');path=auth.session.user.id+'/'+id+'/cover';const uploaded=await client.storage.from('tripfact-banner-photos').upload(path,file,{contentType:file.type});if(uploaded.error&&String(uploaded.error.statusCode)!=='409'&&uploaded.error.error!=='Duplicate')throw new Error('이미지 업로드에 실패했습니다. 다시 시도해 주세요.');}
+        const result=await call('tripfact_book_ad',{p_id:id,p_zone:slot.zone_id,p_title:title,p_body:String(values.get('body')||'').trim(),p_link:link.href,p_image_path:path,p_days:days,p_expected_start:slot.next_start,p_expected_points:fee});
+        if(typeof toast==='function')toast('광고 집행 등록 완료 · '+Number(result.points).toLocaleString('ko-KR')+'P 사용');await onBooked();
+      }catch(error){status.textContent=error.message;}finally{button.disabled=false;form.inert=false;}
+    };
+  }catch{container.textContent='광고 신청을 불러오지 못했습니다. 업체 승인 상태와 027 SQL 적용 여부를 확인해 주세요.';}
+}
+async function renderAdminSupportAccount(container,call){
+  container.innerHTML='<h3>후원 계좌 설정</h3><form class="rate-tools"><label>은행 · 계좌번호 · 예금주<input name="bank" maxlength="200" placeholder="은행명 계좌번호 예금주"></label><button type="submit" class="primary">계좌 저장</button></form><p role="status"></p>';
+  const form=container.querySelector('form'),status=container.querySelector('[role=status]');
+  try{const current=await call('tripfact_support_account',{});form.elements.bank.value=current.bank||'';}catch{status.textContent='027 SQL 적용 후 계좌를 설정할 수 있습니다.';}
+  form.onsubmit=async e=>{e.preventDefault();const button=form.querySelector('button');button.disabled=true;try{await call('tripfact_admin_support_account',{p_bank:form.elements.bank.value.trim()});status.textContent='후원 계좌를 저장했습니다. 업체회원 후원하기 화면에 표시됩니다.';}catch(error){status.textContent=error.message;}finally{button.disabled=false;}};
 }
 
 (() => {
