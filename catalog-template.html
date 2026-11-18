@@ -56,6 +56,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 
 .admin-member-editor{flex-basis:100%;width:100%;margin-top:12px;padding:16px;background:#f3f7ef;border-radius:12px}.admin-member-editor>h3,.admin-member-editor>.vendor-help,.admin-member-editor>[role=status]{grid-column:1/-1}
 
+.member-point-balance{color:#18785c;white-space:nowrap}.admin-point-editor{flex-basis:100%;width:100%;padding:16px;background:#f3f7ef;border-radius:12px}.admin-point-editor [data-preview],.admin-point-editor [role=status]{grid-column:1/-1}.point-adjustment-record{padding:12px 0;border-bottom:1px solid var(--line)}.point-adjustment-record p{margin:5px 0}
+
 .desktop-nav{gap:clamp(12px,2vw,26px)}
 .desktop-nav button{font-size:16px;color:#456254;white-space:nowrap}
 .quick button,.shop-categories button,.directory-cats button{font-size:14px}
@@ -1306,7 +1308,7 @@ function renderAdminRates(container, rates, zones, save) {
   showGroup();
 }
 
-function renderAdminMembers(container, queryMembers, updateMember) {
+function renderAdminMembers(container, queryMembers, updateMember, pointControls) {
   let type = 'consumer';
   let offset = 0;
   let request = 0;
@@ -1314,7 +1316,7 @@ function renderAdminMembers(container, queryMembers, updateMember) {
     <button class="vendor-link" data-type="business">업체회원</button><button class="vendor-link" data-type="admin">관리자</button></div>
     <form class="rate-tools"><input name="search" type="search" maxlength="254" aria-label="회원 검색"
       placeholder="이메일 또는 업체명" style="max-width:240px">
-      <button class="vendor-link" type="submit">검색</button></form>
+      <button class="vendor-link" type="submit">검색</button><button class="vendor-link" type="button" data-member-refresh>새로고침</button></form>
     <p class="vendor-help" role="status"></p><div class="member-results"></div>
     <div class="rate-pages"><button class="vendor-link member-previous">이전</button>
       <button class="vendor-link member-next">다음</button></div>`;
@@ -1360,6 +1362,15 @@ function renderAdminMembers(container, queryMembers, updateMember) {
           type === 'business' ? (member.business_approved ? '업체 승인' : '승인 대기') : '',
         ].filter(Boolean).join(' · ');
         row.append(name, details);
+        if(member.member_type==='business'){
+          const balance=document.createElement('strong');balance.className='member-point-balance';balance.textContent=member.points==null?'보유 포인트 확인 필요':'보유 포인트 '+Number(member.points).toLocaleString('ko-KR')+'P';row.append(balance);
+          if(pointControls){const controls=document.createElement('div');controls.className='member-profile-actions';
+            for(const [mode,label] of [['add','포인트 지급'],['subtract','포인트 차감'],['history','조정 내역']]){
+              const button=document.createElement('button');button.type='button';button.className='vendor-link';button.textContent=label;button.disabled=member.points==null;
+              button.onclick=()=>{container.querySelectorAll('.admin-member-editor,.admin-point-editor').forEach(n=>n.remove());renderAdminPointAdjustment(row,member,mode,pointControls,load);};controls.append(button);
+            }row.append(controls);
+          }
+        }
         if(updateMember){
           const actions=document.createElement('div');actions.className='member-profile-actions';
           for(const [action,label] of [['info','정보 수정'],['password','비밀번호 변경']]){
@@ -1377,6 +1388,7 @@ function renderAdminMembers(container, queryMembers, updateMember) {
   }
   tabs.forEach(tab => { tab.onclick = () => { type = tab.dataset.type; offset = 0; load(); }; });
   form.onsubmit = event => { event.preventDefault(); search = form.elements.search.value.trim(); offset = 0; load(); };
+  container.querySelector('[data-member-refresh]').onclick=load;
   previous.onclick = () => { offset = Math.max(0, offset - 20); load(); };
   next.onclick = () => { offset += 20; load(); };
   load();
@@ -1463,6 +1475,27 @@ function renderAdminMemberEditor(row,member,action,updateMember,onSaved){
     catch(error){status.textContent=error.message;}finally{submit.disabled=false;form.inert=false;}
   };
   row.append(form);form.querySelector('input')?.focus();
+}
+
+function renderAdminPointAdjustment(row,member,mode,controls,onSaved){
+  const panel=document.createElement('div');panel.className='admin-point-editor';row.append(panel);const fmt=n=>Number(n).toLocaleString('ko-KR');
+  const title=document.createElement('h3');title.textContent=mode==='history'?'포인트 조정 내역':mode==='add'?'포인트 추가 지급':'포인트 차감';panel.append(title);
+  if(mode==='history'){
+    const area=document.createElement('div');area.textContent='불러오는 중…';panel.append(area);
+    controls.history(member.user_id).then(rows=>{if(!panel.isConnected)return;area.innerHTML=rows.length?rows.map(r=>'<div class="point-adjustment-record"><b>'+(Number(r.delta)>0?'+':'')+fmt(r.delta)+'P</b><p>'+escapeHTML(r.reason)+'</p><small>'+fmt(r.balance_before)+'P → '+fmt(r.balance_after)+'P · '+escapeHTML(r.administrator)+' · '+escapeHTML(new Date(r.created_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))+'</small></div>').join(''):'조정 내역이 없습니다.';}).catch(e=>{area.textContent=e.message;});
+    const close=document.createElement('button');close.className='vendor-link';close.textContent='닫기';close.onclick=()=>panel.remove();panel.append(close);return;
+  }
+  const form=document.createElement('form');form.className='campaign-form';form.innerHTML='<label>조정 포인트<input type="number" name="amount" min="1" max="100000000" step="1" inputmode="numeric" required></label><label>조정 사유<input name="reason" maxlength="200" required placeholder="예: 이벤트 지원, 잘못 지급한 포인트 회수"></label><p data-preview></p><div class="member-profile-actions"><button class="primary" type="submit">'+(mode==='add'?'지급하기':'차감하기')+'</button><button class="vendor-link" type="button" data-cancel>취소</button></div><p role="status"></p>';
+  let requestId=crypto.randomUUID();const current=Number(member.points),status=form.querySelector('[role=status]'),submit=form.querySelector('[type=submit]');
+  function preview(){const amount=Number(form.elements.amount.value)||0;form.querySelector('[data-preview]').textContent='현재 '+fmt(current)+'P → 조정 후 '+fmt(current+(mode==='add'?amount:-amount))+'P';}
+  form.addEventListener('input',()=>{requestId=crypto.randomUUID();preview();});preview();form.querySelector('[data-cancel]').onclick=()=>panel.remove();
+  form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;const amount=form.elements.amount.valueAsNumber,reason=form.elements.reason.value.trim();
+    if(!Number.isSafeInteger(amount)||amount<1||amount>100000000||!reason){status.textContent='포인트와 조정 사유를 확인해 주세요.';return;}
+    if(mode==='subtract'&&amount>current){status.textContent='보유 포인트보다 많이 차감할 수 없습니다.';return;}
+    submit.disabled=true;form.inert=true;status.textContent='처리 중…';
+    try{await controls.adjust({p_user:member.user_id,p_delta:mode==='add'?amount:-amount,p_reason:reason,p_request:requestId,p_expected_balance:current});if(typeof toast==='function')toast(mode==='add'?'포인트를 지급했습니다.':'포인트를 차감했습니다.');await onSaved();}
+    catch(error){status.textContent=error.message;}finally{submit.disabled=false;form.inert=false;}
+  };panel.append(form);form.elements.amount.focus();
 }
 
 function installLiveEvents({connect, checked, accountState, showPage, updateMemberHeader}) {
@@ -2103,6 +2136,9 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         const errors={admin_required:'관리자 권한을 확인해 주세요.',login_required:'다시 로그인해 주세요.',server_setup_required:'서버에 SUPABASE_SERVICE_ROLE_KEY 설정이 필요합니다.',edit_sql_required:'025 회원 수정 SQL을 먼저 적용해 주세요.',invalid_fields:'이메일·업체명·12자 이상 비밀번호를 확인해 주세요.',member_not_found:'회원 정보를 찾을 수 없습니다.',update_rejected:'이메일 중복이나 비밀번호 조건을 확인해 주세요.',update_unconfirmed:'변경 확인이 지연됩니다. 내용을 바꾸지 말고 다시 시도해 주세요.',retry_same_request:'응답이 지연됩니다. 내용을 바꾸지 말고 다시 시도해 주세요.'};
         throw new Error(errors[result.error]||'수정하지 못했습니다. 다시 시도해 주세요.');
       }return result;
+    },{
+      adjust:async args=>{const result=await checked(client.rpc('tripfact_admin_adjust_points',args));updateMemberHeader();return result;},
+      history:userId=>checked(client.rpc('tripfact_admin_point_adjustments',{p_user:userId})),
     });
     loadAdRates($('adminAdRates'), true);
     loadEventAdmin();
