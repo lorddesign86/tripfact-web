@@ -54,6 +54,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 
 .admin-member-create{margin-bottom:16px}.admin-member-create>summary{display:inline-block;cursor:pointer;margin-bottom:12px}.admin-member-create [hidden]{display:none!important}
 
+.admin-member-editor{flex-basis:100%;width:100%;margin-top:12px;padding:16px;background:#f3f7ef;border-radius:12px}.admin-member-editor>h3,.admin-member-editor>.vendor-help,.admin-member-editor>[role=status]{grid-column:1/-1}
+
 .desktop-nav{gap:clamp(12px,2vw,26px)}
 .desktop-nav button{font-size:16px;color:#456254;white-space:nowrap}
 .quick button,.shop-categories button,.directory-cats button{font-size:14px}
@@ -1304,7 +1306,7 @@ function renderAdminRates(container, rates, zones, save) {
   showGroup();
 }
 
-function renderAdminMembers(container, queryMembers) {
+function renderAdminMembers(container, queryMembers, updateMember) {
   let type = 'consumer';
   let offset = 0;
   let request = 0;
@@ -1351,13 +1353,20 @@ function renderAdminMembers(container, queryMembers) {
         const row = document.createElement('div');
         row.className = 'booking-row';
         const name = document.createElement('b');
-        name.textContent = member.business_name || member.email || '이메일 없음';
+        name.textContent = member.display_name || member.business_name || member.email || '이메일 없음';
         const details = document.createElement('div');
         details.textContent = [member.business_name && member.email, date.format(new Date(member.created_at)),
           member.email_confirmed_at ? '이메일 확인' : '이메일 미확인',
           type === 'business' ? (member.business_approved ? '업체 승인' : '승인 대기') : '',
         ].filter(Boolean).join(' · ');
         row.append(name, details);
+        if(updateMember){
+          const actions=document.createElement('div');actions.className='member-profile-actions';
+          for(const [action,label] of [['info','정보 수정'],['password','비밀번호 변경']]){
+            const button=document.createElement('button');button.type='button';button.className='vendor-link';button.textContent=label;
+            button.onclick=()=>{container.querySelectorAll('.admin-member-editor').forEach(n=>n.remove());renderAdminMemberEditor(row,member,action,updateMember,load);};actions.append(button);
+          }row.append(actions);
+        }
         results.append(row);
       }
       previous.disabled = offset === 0;
@@ -1434,6 +1443,26 @@ function renderAdminMemberCreate(container,createMember,onCreated){
   form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;const values=new FormData(form);const button=form.querySelector('[type=submit]');button.disabled=true;form.inert=true;status.textContent='추가 중…';
     try{await createMember({request_id:requestId,role:values.get('role'),name:values.get('name'),email:values.get('email'),password:values.get('password'),company:values.get('company'),approved:form.elements.approved.checked,admin_ack:form.elements.admin_ack.checked});form.elements.password.value='';status.textContent='회원을 추가했습니다.';await onCreated();}
     catch(error){status.textContent=error.message;}finally{button.disabled=false;form.inert=false;}};
+}
+
+function renderAdminMemberEditor(row,member,action,updateMember,onSaved){
+  const form=document.createElement('form');form.className='admin-member-editor campaign-form';let requestId=crypto.randomUUID();
+  if(action==='password'){
+    form.innerHTML='<h3>비밀번호 변경</h3><p>'+escapeHTML(member.email)+'</p><label>새 비밀번호<input type="password" name="password" minlength="12" maxlength="128" autocomplete="new-password" required></label><label>새 비밀번호 확인<input type="password" name="confirm" minlength="12" maxlength="128" autocomplete="new-password" required></label><p class="vendor-help">기존 비밀번호는 표시하지 않습니다. 변경한 비밀번호는 회원에게 별도로 전달해 주세요.</p>';
+  }else{
+    form.innerHTML='<h3>회원 정보 수정</h3><label>표시 이름<input name="name" maxlength="40" value="'+escapeHTML(member.display_name||'')+'"></label><label>로그인 이메일<input type="email" name="email" maxlength="254" required value="'+escapeHTML(member.email||'')+'"></label>'+(member.member_type==='business'?'<label>업체명<input name="company" maxlength="120" required value="'+escapeHTML(member.business_name||'')+'"></label><label><span><input name="approved" type="checkbox" style="width:auto" '+(member.business_approved?'checked':'')+'> 업체 승인 완료</span></label>':'')+'<p class="vendor-help">로그인 이메일을 바꾸면 새 이메일로 로그인해야 합니다. 변경한 이메일은 별도 인증 없이 적용됩니다.</p>';
+  }
+  form.insertAdjacentHTML('beforeend','<div class="member-profile-actions"><button class="primary" type="submit">'+(action==='password'?'비밀번호 변경':'정보 저장')+'</button><button class="vendor-link" type="button" data-cancel>취소</button></div><p role="status"></p>');
+  const status=form.querySelector('[role=status]'),submit=form.querySelector('[type=submit]');form.querySelector('[data-cancel]').onclick=()=>form.remove();form.addEventListener('input',()=>{requestId=crypto.randomUUID();});
+  form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;
+    if(action==='password'&&form.elements.password.value!==form.elements.confirm.value){status.textContent='새 비밀번호가 서로 다릅니다.';return;}
+    const values=new FormData(form),payload={user_id:member.user_id,request_id:requestId,action};
+    if(action==='password')payload.password=values.get('password');else{payload.name=values.get('name');payload.email=values.get('email');payload.company=values.get('company')||'';payload.approved=form.elements.approved?.checked===true;}
+    submit.disabled=true;form.inert=true;status.textContent='저장 중…';
+    try{await updateMember(payload);if(action==='password'){form.elements.password.value='';form.elements.confirm.value='';}if(typeof toast==='function')toast(action==='password'?'비밀번호를 변경했습니다.':'회원 정보를 수정했습니다.');await onSaved();}
+    catch(error){status.textContent=error.message;}finally{submit.disabled=false;form.inert=false;}
+  };
+  row.append(form);form.querySelector('input')?.focus();
 }
 
 function installLiveEvents({connect, checked, accountState, showPage, updateMemberHeader}) {
@@ -2066,7 +2095,15 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       return result;
     },async()=>{await adminPage();message('회원을 추가했습니다. 회원 목록에서 확인할 수 있습니다.');});
     renderAdminMembers($('adminMembers'), (type, query, offset) =>
-      checked(client.rpc('tripfact_admin_members', {p_type:type,p_query:query,p_offset:offset})));
+      checked(client.rpc('tripfact_admin_members', {p_type:type,p_query:query,p_offset:offset})), async payload=>{
+      const current=(await checked(client.auth.getSession())).session;
+      if(!current)throw new Error('다시 로그인해 주세요.');
+      const response=await fetch('/api/admin-members',{method:'PATCH',headers:{'Content-Type':'application/json',Authorization:'Bearer '+current.access_token},body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)});
+      const result=await response.json();if(!response.ok){
+        const errors={admin_required:'관리자 권한을 확인해 주세요.',login_required:'다시 로그인해 주세요.',server_setup_required:'서버에 SUPABASE_SERVICE_ROLE_KEY 설정이 필요합니다.',edit_sql_required:'025 회원 수정 SQL을 먼저 적용해 주세요.',invalid_fields:'이메일·업체명·12자 이상 비밀번호를 확인해 주세요.',member_not_found:'회원 정보를 찾을 수 없습니다.',update_rejected:'이메일 중복이나 비밀번호 조건을 확인해 주세요.',update_unconfirmed:'변경 확인이 지연됩니다. 내용을 바꾸지 말고 다시 시도해 주세요.',retry_same_request:'응답이 지연됩니다. 내용을 바꾸지 말고 다시 시도해 주세요.'};
+        throw new Error(errors[result.error]||'수정하지 못했습니다. 다시 시도해 주세요.');
+      }return result;
+    });
     loadAdRates($('adminAdRates'), true);
     loadEventAdmin();
     await pollAlerts();
