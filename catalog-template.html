@@ -52,6 +52,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 
 .business-workspace [hidden]{display:none!important}.business-workspace [data-plot] svg{width:100%;height:auto;display:block;min-height:150px}.ad-chart-axis{display:flex;justify-content:space-between;font-size:11px;color:#718578}.campaign-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.campaign-form label{display:flex;flex-direction:column;gap:5px}.campaign-form input,.campaign-form select{width:100%;min-width:0}.ad-live{text-decoration:none;color:inherit}.ad-live img{object-fit:cover}.business-workspace .insight-table{overflow:auto}.business-workspace .booking-row{flex-wrap:wrap}.business-workspace .insight-totals{grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}@media(max-width:600px){.campaign-form{grid-template-columns:1fr}}
 
+.admin-member-create{margin-bottom:16px}.admin-member-create>summary{display:inline-block;cursor:pointer;margin-bottom:12px}.admin-member-create [hidden]{display:none!important}
+
 .desktop-nav{gap:clamp(12px,2vw,26px)}
 .desktop-nav button{font-size:16px;color:#456254;white-space:nowrap}
 .quick button,.shop-categories button,.directory-cats button{font-size:14px}
@@ -1307,7 +1309,7 @@ function renderAdminMembers(container, queryMembers) {
   let offset = 0;
   let request = 0;
   container.innerHTML = `<div class="rate-pages"><button class="vendor-link" data-type="consumer">일반회원</button>
-    <button class="vendor-link" data-type="business">업체회원</button></div>
+    <button class="vendor-link" data-type="business">업체회원</button><button class="vendor-link" data-type="admin">관리자</button></div>
     <form class="rate-tools"><input name="search" type="search" maxlength="254" aria-label="회원 검색"
       placeholder="이메일 또는 업체명" style="max-width:240px">
       <button class="vendor-link" type="submit">검색</button></form>
@@ -1335,7 +1337,7 @@ function renderAdminMembers(container, queryMembers) {
       const data = await queryMembers(type, search, offset);
       if (version !== request) return;
       for (const tab of tabs) {
-        tab.textContent = (tab.dataset.type === 'consumer' ? '일반회원 ' : '업체회원 ')
+        tab.textContent = ({consumer:'일반회원 ',business:'업체회원 ',admin:'관리자 '}[tab.dataset.type])
           + Number(data.totals[tab.dataset.type]).toLocaleString('ko-KR') + '명';
       }
       if (!data.members.length && offset) {
@@ -1422,6 +1424,16 @@ function renderAdminFinance(container,call){
       container.querySelector('[data-daily]').innerHTML='<h3>날짜별</h3><table><thead><tr><th>날짜</th><th>후원 승인액</th><th>후원 건수</th><th>사용 포인트</th><th>사용 건수</th></tr></thead><tbody>'+data.days.map(r=>'<tr><td>'+escapeHTML(r.day)+'</td><td>'+fmt(r.support_krw)+'원</td><td>'+fmt(r.support_count)+'</td><td>'+fmt(r.spent_points)+'P</td><td>'+fmt(r.spent_count)+'</td></tr>').join('')+'</tbody></table>';status.textContent='';
     }catch{status.textContent='후원 통계를 불러오지 못했습니다. 022 포인트 통계 SQL 적용 여부를 확인해 주세요.';}}
   container.querySelector('[data-period]').onchange=load;container.querySelector('[data-refresh]').onclick=load;load();
+}
+
+function renderAdminMemberCreate(container,createMember,onCreated){
+  container.innerHTML='<details class="admin-member-create"><summary class="vendor-link">＋ 회원 추가</summary><form class="campaign-form"><label>회원 유형<select name="role"><option value="consumer">일반회원</option><option value="business">업체회원</option><option value="admin">관리자</option></select></label><label>표시 이름<input name="name" maxlength="40" autocomplete="off"></label><label>이메일<input name="email" type="email" maxlength="254" autocomplete="off" required></label><label>비밀번호<input name="password" type="password" minlength="12" maxlength="128" autocomplete="new-password" required placeholder="12자 이상"></label><label data-company hidden>업체명<input name="company" maxlength="120"></label><label data-approved hidden><span><input name="approved" type="checkbox" style="width:auto" checked> 업체 승인 완료로 생성</span></label><label data-admin-ack hidden><span><input name="admin_ack" type="checkbox" style="width:auto"> 이 계정에 전체 운영 권한을 부여합니다.</span></label><p class="vendor-help">직접 추가한 계정은 이메일 인증 없이 로그인할 수 있습니다. 비밀번호는 회원에게 별도로 전달해 주세요.</p><button type="submit" class="primary">회원 추가</button></form><p role="status"></p></details>';
+  const form=container.querySelector('form'),status=container.querySelector('[role=status]');let requestId=crypto.randomUUID();
+  const refresh=()=>{const business=form.elements.role.value==='business',admin=form.elements.role.value==='admin';form.querySelector('[data-company]').hidden=!business;form.querySelector('[data-approved]').hidden=!business;form.elements.company.required=business;form.querySelector('[data-admin-ack]').hidden=!admin;form.elements.admin_ack.required=admin;if(!admin)form.elements.admin_ack.checked=false;};
+  form.elements.role.onchange=refresh;form.addEventListener('input',()=>{requestId=crypto.randomUUID();});refresh();
+  form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;const values=new FormData(form);const button=form.querySelector('[type=submit]');button.disabled=true;form.inert=true;status.textContent='추가 중…';
+    try{await createMember({request_id:requestId,role:values.get('role'),name:values.get('name'),email:values.get('email'),password:values.get('password'),company:values.get('company'),approved:form.elements.approved.checked,admin_ack:form.elements.admin_ack.checked});form.elements.password.value='';status.textContent='회원을 추가했습니다.';await onCreated();}
+    catch(error){status.textContent=error.message;}finally{button.disabled=false;form.inert=false;}};
 }
 
 function installLiveEvents({connect, checked, accountState, showPage, updateMemberHeader}) {
@@ -2013,7 +2025,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         ${esc(row.business_name)} <button class="vendor-link" data-business="${esc(row.user_id)}">업체 승인</button></div>`).join('') : '<p>확인할 업체가 없습니다.</p>') +
       section('포인트 지급 내역', credits.length ? credits.map(row => `<div class="booking-row">
         <b>+${money(row.amount_krw)}P · ${esc(row.depositor)}</b>${esc(new Date(row.approved_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))}</div>`).join('') : '<p>포인트 지급 내역이 없습니다.</p>') +
-      section('회원 목록', '<div id="adminMembers"></div>') +
+      section('회원 관리', '<div id="adminMemberCreate"></div><div id="adminMembers"></div>') +
       section('광고 구역 단가', '<p>30일 이용료입니다. 90일은 30일 이용료의 3배이며, 같은 구역의 가격은 모든 도시에 공통 적용됩니다. C 자리는 광고 노출 설정에서 추가로 열 수 있습니다.</p><div id="adminAdRates"></div>') +
       section('슈퍼핫딜 · 핫딜 등록비', '<div id="adminEventFee"></div><h3>핫딜 포인트 사용 내역</h3><div id="adminEventSpending"></div>') +
       section('광고 일정', '<p>광고 예약 일정은 연결 준비 중입니다.</p>') +
@@ -2045,6 +2057,14 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       return result;
     }, id=>checked(client.from('tripfact_articles').select('*').eq('id',id).single()));
     renderAdminCommunity($('adminSocial'), (name, args) => checked(client.rpc(name, args)));
+    renderAdminMemberCreate($('adminMemberCreate'),async payload=>{
+      const current=(await checked(client.auth.getSession())).session;
+      if(!current)throw new Error('다시 로그인해 주세요.');
+      const response=await fetch('/api/admin-members',{method:'POST',headers:{'Content-Type':'application/json',Authorization:'Bearer '+current.access_token},body:JSON.stringify(payload),signal:AbortSignal.timeout(30000)});
+      const result=await response.json();
+      if(!response.ok){const errors={email_exists:'이미 가입된 이메일입니다. 기존 회원을 확인해 주세요.',invalid_fields:'이메일·12자 이상 비밀번호·회원 유형과 업체명을 확인해 주세요.',admin_required:'관리자 권한을 확인해 주세요.',login_required:'다시 로그인해 주세요.',server_setup_required:'서버에 SUPABASE_SERVICE_ROLE_KEY 설정이 필요합니다.',sql_or_server_setup_required:'024 회원 추가 SQL과 서버 연결 설정을 확인해 주세요.',request_conflict:'입력값을 변경한 뒤 다시 시도해 주세요.',create_rejected:'계정 생성이 거절되었습니다. 이메일 중복 또는 비밀번호 조건을 확인해 주세요.',creation_unconfirmed:'생성 확인이 지연되고 있습니다. 같은 내용으로 다시 시도해 주세요.',retry_same_request:'응답이 지연되었습니다. 내용을 바꾸지 말고 다시 시도해 주세요.'};throw new Error(errors[result.error]||'추가하지 못했습니다. 잠시 후 다시 시도해 주세요.');}
+      return result;
+    },async()=>{await adminPage();message('회원을 추가했습니다. 회원 목록에서 확인할 수 있습니다.');});
     renderAdminMembers($('adminMembers'), (type, query, offset) =>
       checked(client.rpc('tripfact_admin_members', {p_type:type,p_query:query,p_offset:offset})));
     loadAdRates($('adminAdRates'), true);
