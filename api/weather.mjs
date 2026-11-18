@@ -8,7 +8,7 @@ const locations = {
 export async function GET(request) {
   const area = new URL(request.url).searchParams.get('area') || 'center';
   if (!Object.hasOwn(locations, area)) return Response.json({error:'unknown_area'}, {status:400});
-  const key = process.env.GOOGLE_WEATHER_API_KEY;
+  const key = process.env.GOOGLE_WEATHER_API_KEY?.trim();
   if (!key) return Response.json({error:'not_configured'}, {status:503});
 
   const [latitude, longitude] = locations[area];
@@ -22,7 +22,15 @@ export async function GET(request) {
       headers: {'X-Goog-Api-Key': key},
       signal: AbortSignal.timeout(6000),
     });
-    if (!response.ok) return Response.json({error:'weather_unavailable'}, {status:502});
+    if (!response.ok) {
+      const body = await response.json().catch(() => null);
+      const reason = body?.error?.details?.find(detail => detail.domain === 'googleapis.com')?.reason;
+      console.warn('[weather] Google request failed', {
+        status: response.status,
+        reason: typeof reason === 'string' && /^[A-Z0-9_]{1,80}$/.test(reason) ? reason : 'unknown',
+      });
+      return Response.json({error:'weather_unavailable'}, {status:502});
+    }
     const result = await response.json();
     const days = (result.forecastDays || []).map(day => {
       const {year, month, day:date} = day.displayDate;
@@ -34,9 +42,13 @@ export async function GET(request) {
         condition: day.daytimeForecast?.weatherCondition?.description?.text || '',
       };
     });
-    if (!days.length) return Response.json({error:'weather_unavailable'}, {status:502});
+    if (!days.length) {
+      console.warn('[weather] Google returned no forecast days');
+      return Response.json({error:'weather_unavailable'}, {status:502});
+    }
     return Response.json({days}, {headers:{'Cache-Control':'no-store'}});
-  } catch {
+  } catch (error) {
+    console.warn('[weather]', error?.name === 'TimeoutError' ? 'Google request timed out' : 'Google request or response processing failed');
     return Response.json({error:'weather_unavailable'}, {status:502});
   }
 }

@@ -1,8 +1,25 @@
 {
-  "rewrites": [{ "source": "/", "destination": "/api/catalog" }],
+  "rewrites": [
+    { "source": "/", "destination": "/api/catalog" },
+    { "source": "/information", "destination": "/api/articles" },
+    { "source": "/information/:slug", "destination": "/api/articles?slug=:slug" },
+    { "source": "/sitemap.xml", "destination": "/api/articles?view=sitemap" },
+    { "source": "/rss.xml", "destination": "/api/articles?view=rss" },
+    { "source": "/robots.txt", "destination": "/api/articles?view=robots" }
+  ],
+  "crons": [{ "path": "/api/article-generate", "schedule": "0 1 * * *" }],
+  "headers": [{"source":"/(.*)","headers":[
+    {"key":"X-Content-Type-Options","value":"nosniff"},
+    {"key":"X-Frame-Options","value":"DENY"},
+    {"key":"Referrer-Policy","value":"strict-origin-when-cross-origin"},
+    {"key":"Content-Security-Policy","value":"frame-ancestors 'none'; object-src 'none'; base-uri 'self'"}
+  ]}],
   "functions": {
     "api/catalog.py": {
       "includeFiles": "catalog-template.html"
+    },
+    "api/article-generate.py": {
+      "maxDuration": 300
     }
   }
 }

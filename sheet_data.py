@@ -54,14 +54,19 @@ def read_exchange_locations(rows, today=None):
         posted = str(row.get('글 작성일', '')).strip()
         if not start <= posted <= end or row.get('분류') not in ('실거래 후보', '환율 언급'):
             continue
+        exchange_date = str(row.get('환전일(직접 확인)', '')).strip()
+        if re.fullmatch(r'20\d{2}-\d{2}-\d{2}', exchange_date) and not start <= exchange_date <= end:
+            continue
         shop = re.sub(r'\s+', '', str(row.get('환전소(직접 확인)', ''))).lower()
         if shop.isascii() or re.search(r'[a-z]', shop):
             shop = ''.join(c for c in unicodedata.normalize('NFKD', shop)
                            if not unicodedata.combining(c))
         method = row.get('환전 방식')
         names = [label for label, aliases in (
-            ('김옌', ('김옌', 'kimyen')), ('김가', ('김가', 'kimga')),
-            ('손하', ('손하', 'sonha'))) if any(alias in shop for alias in aliases)]
+            ('김옌', ('김옌', '킴옌', 'kimyen')), ('김가', ('김가', '킴가', '킴기아', 'kimgia', 'kimga')),
+            ('손하', ('손하', '소안하', '쏘안하', 'sonha', 'soanha'))) if any(alias in shop for alias in aliases)]
+        if not names and method in ('김옌', '김가', '손하'):
+            names.append(method)
         if method == '공항' or '공항' in shop:
             names.append('공항')
         if len(names) != 1:
@@ -71,7 +76,9 @@ def read_exchange_locations(rows, today=None):
         value = amount(row.get('받은 동(VND)', ''))
         source = safe_url(row.get('출처 링크', ''))
         if nominal and amount(row.get('기준 금액', '')) == nominal and value and source:
-            groups[names[0], currency, urlparse(source)._replace(query='', fragment='').geturl()].add(value)
+            comment = re.match(r'댓글 기록 ([a-f0-9]{16})', str(row.get('확인 사유', '')))
+            source_key = (urlparse(source)._replace(query='', fragment='').geturl(), comment[1] if comment else '')
+            groups[names[0], currency, source_key].add(value)
 
     samples = defaultdict(list)
     for (name, currency, _), values in groups.items():
@@ -90,6 +97,8 @@ def build_snapshot(tables):
     evidence = defaultdict(list)
     review_ids = set()
     for row in tables.get('업체리뷰 근거', []):
+        if row.get('사이트 게시 상태') not in ('게시 승인 · 직접 제보', '게시 승인 · 재사용 허용') or not row.get('재사용 근거'):
+            continue
         review_id = row.get('근거ID')
         source = safe_url(row.get('출처 URL', ''))
         if not review_id or review_id in review_ids or not source or not row.get('후기 요약'):
@@ -202,23 +211,50 @@ def build_snapshot(tables):
         existing = mentions.get(product_id)
         if not existing or (end, start, count) > (existing['end'], existing['start'], existing['count']):
             mentions[product_id] = entry
+    locations = read_exchange_locations(tables.get('환전수집', []))
+    live_rates = {(row['category'], row['currency']): row for row in rates
+                  if row['category'] in ('김옌', '김가', '손하', '공항') and row['posts'] and row['mean_vnd']}
+    for location in locations:
+        combined = live_rates.get((location['location'], location['currency']))
+        if combined:
+            for field in ('posts', 'mean_vnd', 'from', 'to'):
+                location[field] = combined[field]
+        if not location['mean_vnd']:
+            candidates = [row for row in tables.get('환전최근확인', [])
+                if row.get('환전장소') == location['location']
+                and row.get('기준금액') == ('100달러' if location['currency'] == 'USD' else '5만원')
+                and amount(row.get('최근 확인 VND', '')) and safe_url(row.get('출처 링크', ''))
+                and re.fullmatch(r'20\d{2}-\d{2}-\d{2}', row.get('확인일', ''))
+                and row['확인일'] <= datetime.now(KST).date().isoformat()]
+            if candidates:
+                latest = max(candidates, key=lambda row: row['확인일'])
+                location.update(mean_vnd=amount(latest['최근 확인 VND']), posts=1, basis='latest_known',
+                    source_date=latest['확인일'], source_url=latest['출처 링크'],
+                    **{'from': latest['확인일'], 'to': latest['확인일']})
     return dict(city='danang', imported_at=datetime.now(KST).isoformat(timespec='seconds'),
         rates=rates, rate_status=next((r.get('collection_status') for r in tables['웹요약']), ''),
         places=places, products=products, stats=stats, mentions=mentions,
-        exchange_locations=read_exchange_locations(tables.get('환전수집', [])))
+        exchange_locations=locations)
 
 
-def read_workbook(client):
-    tabs = [*CATEGORIES, '가격메뉴', '쇼핑목록', '쇼핑웹요약', '웹요약', '쇼핑수집현황', '환전수집']
+def read_workbook(client, include_places=True):
+    tabs = [*CATEGORIES, '가격메뉴'] if include_places else []
+    tabs += ['쇼핑목록', '쇼핑웹요약', '웹요약', '쇼핑수집현황', '환전수집']
     book = client.open_by_key(WORKBOOK)
     batches = book.values_batch_get([f"'{tab}'!A1:AZ" for tab in tabs])['valueRanges']
-    tables = {}
+    tables = {name: [] for name in [*CATEGORIES, '가격메뉴']}
     for tab, batch in zip(tabs, batches, strict=True):
         headers, *rows = batch.get('values') or [[]]
         tables[tab] = [dict(zip(headers, row)) for row in rows]
-    try:
-        reviews = book.worksheet('업체리뷰 근거').get_all_records()
-    except WorksheetNotFound:
-        reviews = []
+    reviews = []
+    if include_places:
+        try:
+            reviews = book.worksheet('업체리뷰 근거').get_all_records()
+        except WorksheetNotFound:
+            pass
     tables['업체리뷰 근거'] = reviews
+    try:
+        tables['환전최근확인'] = book.worksheet('환전최근확인').get_all_records(numericise_ignore=['all'])
+    except WorksheetNotFound:
+        tables['환전최근확인'] = []
     return build_snapshot(tables)

@@ -6,7 +6,8 @@ from pathlib import Path
 
 import gspread
 from google.oauth2.service_account import Credentials
-from sheet_data import WORKBOOK, read_rates, read_workbook
+from sheet_data import WORKBOOK, read_exchange_locations, read_rates, read_workbook
+from article_service import home_metadata
 
 TEMPLATE = Path(__file__).resolve().parents[1] / 'catalog-template.html'
 START = '/* SHEET_DATA_START */'
@@ -39,17 +40,24 @@ class handler(BaseHTTPRequestHandler):
             client = sheet_client()
             sheet_status = 'read-failed'
             try:
-                snapshot = read_workbook(client)
+                snapshot = read_workbook(client, include_places=False)
                 source = 'sheets'
             except Exception:
                 # Keep live rates available even if an unrelated catalog tab fails.
                 snapshot = json.loads(html.split(START, 1)[1].split(END, 1)[0])
-                rates_sheet = client.open_by_key(WORKBOOK).worksheet('웹요약')
+                book = client.open_by_key(WORKBOOK)
+                rates_sheet = book.worksheet('웹요약')
                 rows = rates_sheet.get_all_records(numericise_ignore=['all'])
                 snapshot['rates'] = read_rates(rows)
                 snapshot['rate_status'] = next((row.get('collection_status') for row in rows), '')
+                try:
+                    records = book.worksheet('환전수집').get_all_records(numericise_ignore=['all'])
+                    snapshot['exchange_locations'] = read_exchange_locations(records)
+                except gspread.exceptions.GSpreadException:
+                    pass
                 source = 'sheets-rates'
             snapshot['source_mode'] = 'connected' if source == 'sheets' else 'snapshot'
+            snapshot.pop('places', None)
             html = with_data(html, snapshot)
             sheet_status = 'connected' if source == 'sheets' else 'rates-only'
             cache = 'public, s-maxage=300, stale-while-revalidate=300'
@@ -58,7 +66,7 @@ class handler(BaseHTTPRequestHandler):
             if os.environ.get('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON'):
                 sheet_status = 'read-failed'
                 print(f'Sheet connection failed: {type(error).__name__}', flush=True)
-        payload = html.encode('utf-8')
+        payload = home_metadata(html).encode('utf-8')
         self.send_response(200)
         self.send_header('Content-Type', 'text/html; charset=utf-8')
         self.send_header('Cache-Control', cache)
