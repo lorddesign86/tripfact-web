@@ -537,7 +537,7 @@ function saveAds(next){try{localStorage.setItem('tripfact-ad-demo-v1',JSON.strin
 const dayNumber=s=>Date.parse(s+'T00:00:00Z')/86400000;
 const dateString=n=>new Date(n*86400000).toISOString().slice(0,10);
 function gapWindows(zone,bookings=ads.bookings){const entries=bookings.filter(b=>b.zone===zone).slice().sort((a,b)=>a.start.localeCompare(b.start)),gaps=[];for(let i=1;i<entries.length;i++){const start=dayNumber(entries[i-1].end)+1,end=dayNumber(entries[i].start)-1,length=end-start+1;if(length>=1&&length<=6&&dateString(start)>=PREVIEW_TODAY)gaps.push({start:dateString(start),end:dateString(end),days:length})}return gaps}
-function evaluateBooking(zone,start,end,points=ads.points,bookings=ads.bookings){const z=adZones.find(x=>x.id===zone);if(!z||!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)||!Number.isFinite(dayNumber(start))||!Number.isFinite(dayNumber(end)))return {ok:false,message:'광고 구역과 시작일·종료일을 선택해 주세요.'};const days=dayNumber(end)-dayNumber(start)+1,cost=days*z.daily;if(start<PREVIEW_TODAY)return{ok:false,message:'지난 날짜에는 예약할 수 없어요.'};if(days<1)return{ok:false,message:'종료일은 시작일 이후로 선택해 주세요.'};if(bookings.some(b=>b.zone===zone&&start<=b.end&&end>=b.start))return{ok:false,message:'다른 예약과 날짜가 겹쳐요. 빈 날짜를 선택해 주세요.',days,cost};const gap=gapWindows(zone,bookings).some(g=>g.start===start&&g.end===end);if(days<7&&!gap)return{ok:false,message:'일반 예약은 7일 이상이에요. 1~6일은 예약 사이 빈 기간 전체만 선택할 수 있어요.',days,cost};if(points<cost)return{ok:false,message:'포인트가 부족해요. 체험 포인트를 충전해 주세요.',days,cost};return{ok:true,days,cost,gap,message:gap?'예약 사이 빈 기간 전체를 선택했어요.':'예약 가능한 기간이에요.'}}
+function evaluateBooking(zone,start,end,points=ads.points,bookings=ads.bookings){const z=adZones.find(x=>x.id===zone);if(!z||!/^\d{4}-\d{2}-\d{2}$/.test(start)||!/^\d{4}-\d{2}-\d{2}$/.test(end)||!Number.isFinite(dayNumber(start))||!Number.isFinite(dayNumber(end)))return {ok:false,message:'광고 구역과 시작일·종료일을 선택해 주세요.'};const days=dayNumber(end)-dayNumber(start)+1,cost=days*z.daily;if(start<PREVIEW_TODAY)return{ok:false,message:'지난 날짜에는 예약할 수 없어요.'};if(days<1)return{ok:false,message:'종료일은 시작일 이후로 선택해 주세요.'};if(bookings.some(b=>b.zone===zone&&start<=b.end&&end>=b.start))return{ok:false,message:'다른 예약과 날짜가 겹쳐요. 빈 날짜를 선택해 주세요.',days,cost};const gap=gapWindows(zone,bookings).some(g=>g.start===start&&g.end===end);if(days<7&&!gap)return{ok:false,message:'일반 예약은 7일 이상이에요. 1~6일은 예약 사이 빈 기간 전체만 선택할 수 있어요.',days,cost};if(points<cost)return{ok:false,message:'포인트가 부족해요. 체험 포인트를 후원해 주세요.',days,cost};return{ok:true,days,cost,gap,message:gap?'예약 사이 빈 기간 전체를 선택했어요.':'예약 가능한 기간이에요.'}}
 function adSlot(zone,inline=false){const z=adZones.find(x=>x.id===zone);return `<aside class="ad-slot ${inline?'ad-inline':''}" data-zone="${zone}" aria-label="${z.name} 광고"><div><small>AD · 광고 영역 · 디자인 예시</small><strong>${z.name}</strong><p>여행자에게 우리 매장을 소개해 보세요.</p></div><button onclick="openVendor('${zone}')">광고 예약 ↗</button></aside>`}
 // Collapse weather and exchange while retaining an immediately readable summary.
 const weatherPanel=$('forecast').closest('section');
@@ -1579,7 +1579,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
   let client, config, session, profile, admin = false;
   let previousPending = new Set();
   let refreshTimer;
-  const presets = [10000, 50000, 100000];
+  const presets = [10000, 50000, 100000, 300000, 500000];
   const pane = document.createElement('div');
   pane.id = 'memberPage';
   pane.className = 'subpage hidden';
@@ -1672,7 +1672,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
   }
   async function checked(operation) {
     const {data, error} = await operation;
-    if (error) throw new Error(error.message);
+    if (error) throw new Error(String(error.message).replaceAll('충전','후원').replaceAll('입금자명','후원자명').replaceAll('입금','후원'));
     return data;
   }
   async function getAccount() {
@@ -1745,7 +1745,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         <button class="vendor-link" id="editMemberPhoto">프로필 사진 수정</button>
         <button class="vendor-link" id="manageBlockedMembers">차단한 회원 관리</button>
       </div>
-      ${admin || profile?.member_type === 'business' ? '<button class="primary" id="openTopups">업체센터 · 충전 신청</button>' : ''}
+      ${admin || profile?.member_type === 'business' ? '<button class="primary" id="openTopups">업체센터 · 후원 신청</button>' : ''}
       ${admin ? '<button class="vendor-link" id="adminOpenHotdeal">핫딜 등록 화면</button>' : ''}
       ${admin ? '<button class="primary" id="openAdmin">관리자 화면 <span id="adminAlertCount"></span></button>' : ''}
       <button class="vendor-link" id="memberSignOut">로그아웃</button>`);
@@ -1824,13 +1824,13 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       for (const id of ['adminAlertCount','adminPendingCount']) {
         if ($(id)) $(id).textContent = items.length ? `(${items.length === 100 ? '100+' : items.length}건 대기)` : '';
       }
-      if (newCount) toast(`확인할 충전 신청 ${newCount}건이 있습니다.`);
+      if (newCount) toast(`확인할 후원 신청 ${newCount}건이 있습니다.`);
       if ($('adminPendingRows')) drawPending(items);
     } catch (error) { message(error.message); }
   }
   async function business() {
     if (!admin && (profile?.member_type !== 'business' || !profile.business_approved)) {
-      $('memberContent').innerHTML = section('충전 신청',
+      $('memberContent').innerHTML = section('후원 신청',
         '<p>' + (profile?.member_type === 'business' ? '업체 가입 확인을 기다리고 있습니다.' : '업체회원으로 가입한 뒤 이용할 수 있습니다.') + '</p>');
       return;
     }
@@ -1840,13 +1840,13 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         .order('submitted_at',{ascending:false}).limit(30)),
     ]);
     $('memberContent').innerHTML = section(admin ? '운영자 업체센터' : esc(profile.business_name), `<p>적립 포인트 <strong>${money(points)} P</strong></p>${admin?'<p>운영자는 업체 화면을 확인하고 핫딜을 등록할 수 있습니다.</p><div class="member-profile-actions"><button class="primary" id="adminBusinessDashboard">관리자 화면</button><button class="vendor-link" id="adminBusinessHotdeal">핫딜 등록</button></div>':''}`) +
-      section('계좌이체 충전 신청', config.bank || admin ? `${config.bank?'<p>입금 계좌 <strong>'+esc(config.bank)+'</strong></p>':'<p>입금 계좌가 설정되지 않았습니다. Vercel의 TRIPFACT_DEPOSIT_ACCOUNT를 등록하면 충전 신청을 사용할 수 있습니다.</p>'}
-        <form id="topupForm"><div class="filter-row">${presets.map(n=>`<button type="button" data-amount="${n}">${money(n)}원</button>`).join('')}</div>
-        ${field('topupAmount','충전 금액 (원)','type="number" inputmode="numeric" min="1" max="100000000" step="1" required')}
-        ${field('topupDepositor','실제 입금자명','maxlength="60" required')}
-        <label style="display:block;margin:12px 0"><input type="checkbox" required style="width:auto"> 위 계좌로 입금했습니다.</label>
-        <button class="primary" type="submit" ${config.bank?'':'disabled'}>입금 후 충전 신청</button></form>` : '<p>입금 계좌 안내를 준비하고 있습니다.</p>') +
-      section('내 충전 내역', history.length ? history.map(row => `<div class="booking-row"><b>${money(row.amount_krw)}원 · ${row.approved_at?'승인 완료':'입금 확인 대기'}</b>
+      section('후원하기', config.bank || admin ? `<p>우리 커뮤니티는 후원으로 운영됩니다.</p>${config.bank?'<p>후원 계좌 <strong>'+esc(config.bank)+'</strong></p>':'<p>후원 계좌가 아직 설정되지 않았습니다. 계좌 설정 후 후원하기를 이용할 수 있습니다.</p>'}
+        <form id="topupForm"><div class="filter-row">${presets.map(n=>`<button type="button" data-amount="${n}">+${n/10000}만 원</button>`).join('')}<button type="button" data-reset-amount>초기화</button></div><p class="vendor-help">버튼을 누를 때마다 후원 금액이 더해집니다. 직접 입력할 수도 있습니다.</p>
+        ${field('topupAmount','후원 금액 (원)','type="number" inputmode="numeric" min="1" max="100000000" step="1" required')}
+        ${field('topupDepositor','후원자명','maxlength="60" required')}
+        <label style="display:block;margin:12px 0"><input type="checkbox" required style="width:auto"> 위 계좌로 후원금을 보냈습니다.</label>
+        <button class="primary" type="submit" ${config.bank?'':'disabled'}>후원 신청하기</button></form>` : '<p>후원 계좌 안내를 준비하고 있습니다.</p>') +
+      section('내 후원 내역', history.length ? history.map(row => `<div class="booking-row"><b>${money(row.amount_krw)}원 · ${row.approved_at?'승인 완료':'후원 확인 대기'}</b>
         ${esc(new Date(row.submitted_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))}</div>`).join('') : '<p>신청 내역이 없습니다.</p>') +
       section('광고 예약', '<p>기본 30일 · 장기 90일입니다. 90일 이용료는 30일의 3배입니다. 온라인 광고 예약과 포인트 차감 기능은 아직 준비 중입니다.</p><div id="businessAdRates"></div>');
     loadAdRates($('businessAdRates'), false);
@@ -1855,19 +1855,26 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     if (!form) return;
     let submittedKey, submittedDetails;
     form.querySelectorAll('[data-amount]').forEach(preset => {
-      preset.onclick = () => { $('topupAmount').value = preset.dataset.amount; };
+      preset.onclick = () => {
+        const input=$('topupAmount');
+        const current=input.value===''?0:Number(input.value);
+        const next=current+Number(preset.dataset.amount);
+        if(!Number.isSafeInteger(current)||current<0||next>100000000){message('후원 금액은 최대 1억 원까지 입력할 수 있습니다.');return;}
+        input.value=String(next);message('');input.dispatchEvent(new Event('input',{bubbles:true}));
+      };
     });
+    form.querySelector('[data-reset-amount]').onclick=()=>{$('topupAmount').value='';message('');};
     form.onsubmit = event => {
       event.preventDefault();
       submit(form, async () => {
         const amount = Number($('topupAmount').value);
         const depositor = $('topupDepositor').value.trim();
-        if (!Number.isSafeInteger(amount) || amount <= 0 || !depositor) throw new Error('금액과 입금자명을 확인해 주세요.');
+        if (!Number.isSafeInteger(amount) || amount <= 0 || !depositor) throw new Error('금액과 후원자명을 확인해 주세요.');
         const details = JSON.stringify([amount,depositor]);
         if (details !== submittedDetails) { submittedKey = crypto.randomUUID(); submittedDetails = details; }
         await checked(client.rpc('tripfact_request_topup', {p_amount:amount,p_depositor:depositor,p_key:submittedKey}));
         await business();
-        message('충전 신청이 접수됐습니다. 입금 확인 후 포인트가 적립됩니다.');
+        message('후원 신청이 접수됐습니다. 후원 확인 후 포인트가 적립됩니다.');
       });
     };
   }
@@ -1875,10 +1882,10 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     $('adminPendingRows').innerHTML = items.length ? items.map(row => `<div class="booking-row">
       <b>${money(row.amount_krw)}원 · ${esc(row.depositor)}</b>
       ${esc(new Date(row.submitted_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))}
-      <button class="primary" type="button" data-approve="${esc(row.id)}">입금 확인 및 승인</button></div>`).join('') : '<p>확인 대기 중인 충전이 없습니다.</p>';
+      <button class="primary" type="button" data-approve="${esc(row.id)}">후원 확인 및 승인</button></div>`).join('') : '<p>확인 대기 중인 후원이 없습니다.</p>';
     $('adminPendingRows').querySelectorAll('[data-approve]').forEach(control => {
       control.onclick = async () => {
-        if (!confirm('은행 입금 내역을 확인하셨나요? 승인하면 포인트가 지급됩니다.')) return;
+        if (!confirm('은행 후원 내역을 확인하셨나요? 승인하면 포인트가 지급됩니다.')) return;
         control.disabled = true;
         try {
           const credited = await checked(client.rpc('tripfact_approve_topup',{p_topup_id:control.dataset.approve}));
@@ -2228,7 +2235,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
   document.querySelector('.footer > span:nth-child(2)')?.remove();
   document.querySelectorAll('.ad-slot').forEach(node => node.classList.add('hidden'));
   const businessEntry=document.createElement('aside');businessEntry.className='home-business-entry';
-  businessEntry.innerHTML='<div><strong>우리 매장의 혜택을 다낭 여행자에게</strong><p>업체회원 가입 · 포인트 충전 · 광고·핫딜 등록 안내</p></div><div class="home-business-actions"><button class="vendor-link" type="button" data-center>업체센터·포인트 충전</button><button class="primary" type="button" data-hotdeal>핫딜 등록</button></div>';
+  businessEntry.innerHTML='<div><strong>우리 매장의 혜택을 다낭 여행자에게</strong><p>업체회원 가입 · 포인트 후원 · 광고·핫딜 등록 안내</p></div><div class="home-business-actions"><button class="vendor-link" type="button" data-center>업체센터·포인트 후원</button><button class="primary" type="button" data-hotdeal>핫딜 등록</button></div>';
   businessEntry.querySelector('[data-center]').onclick=()=>openVendor();
   businessEntry.querySelector('[data-hotdeal]').onclick=()=>openEventWriter();
   document.querySelector('#homePage .tools-grid').after(businessEntry);
