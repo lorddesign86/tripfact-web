@@ -47,6 +47,9 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .rate-edit[data-missing=true] small{grid-column:2/-1;color:#936744;font-size:11px}
 @media(max-width:600px){.rate-workspace{grid-template-columns:1fr}.rate-preview{grid-row:1}.rate-edit{grid-template-columns:auto minmax(0,1fr) 73px auto;gap:5px}}
 
+.admin-workspace{display:grid;grid-template-columns:175px minmax(0,1fr);gap:20px;align-items:start}.admin-sidebar{position:sticky;top:100px;display:flex;flex-direction:column;gap:6px;padding:12px;background:#fffefa;border:1px solid var(--line);border-radius:16px}.admin-sidebar button{width:100%;padding:12px 10px;text-align:left;border:0;border-radius:10px;background:transparent;color:#40594f;font-size:14px;line-height:1.5;cursor:pointer}.admin-sidebar button:hover{background:#f0f5ec}.admin-sidebar button[aria-current=page]{background:#21846d;color:#fff;font-weight:750}.admin-workspace-content{min-width:0}.admin-category[hidden]{display:none!important}.admin-category>.panel:first-child{margin-top:0!important}.admin-workspace .panel{min-width:0}.admin-workspace .insight-table{max-width:100%;overflow:auto}.admin-workspace .booking-row{flex-wrap:wrap;overflow-wrap:anywhere}
+@media(max-width:700px){.admin-workspace{grid-template-columns:112px minmax(0,1fr);gap:10px}.admin-sidebar{top:76px;padding:6px;border-radius:12px}.admin-sidebar button{font-size:12px;padding:10px 6px}.admin-workspace .panel{padding:14px}.admin-workspace .insight-totals{grid-template-columns:1fr}.admin-workspace .rate-workspace{grid-template-columns:1fr}.admin-workspace .rate-edit{grid-template-columns:auto minmax(0,1fr)}.admin-workspace .rate-tools{flex-wrap:wrap}.admin-workspace input,.admin-workspace select{max-width:100%;min-width:0}}
+
 .desktop-nav{gap:clamp(12px,2vw,26px)}
 .desktop-nav button{font-size:16px;color:#456254;white-space:nowrap}
 .quick button,.shop-categories button,.directory-cats button{font-size:14px}
@@ -886,6 +889,10 @@ function placeReviewPreview(place) {
     const product = shoppingCatalogue.find(row => row.id === id);
     if (!product) return;
     beforeProduct(id);
+    const quote=$('shopQuote');
+    quote?.nextElementSibling?.remove();
+    document.querySelector('label[for="shopQuote"]')?.remove();
+    quote?.remove();
     const detail = $('shopDetail');
     detail.querySelectorAll('.shop-range-demo, .shop-single-reference').forEach(node => node.remove());
     const groups = data.stats[id] || [];
@@ -911,6 +918,12 @@ function placeReviewPreview(place) {
         `<section class="shop-single-reference"><b>참고 사례 · ${bounds(ref)}</b>
         ${referenceDetails ? '<p>' + referenceDetails + '</p>' : ''}</section>`);
     }
+  };
+  const priceResults=renderShopResults;
+  renderShopResults=function(){
+    priceResults();
+    document.querySelector('label[for="shopEmptyQuote"]')?.remove();
+    $('shopEmptyQuote')?.remove();
   };
   renderCards();
   renderShopCategories();
@@ -1353,6 +1366,36 @@ function renderAdminMembers(container, queryMembers) {
   previous.onclick = () => { offset = Math.max(0, offset - 20); load(); };
   next.onclick = () => { offset += 20; load(); };
   load();
+}
+
+function renderAdminWorkspace(container,initial='stats',onSelect=()=>{}) {
+  const sections=[...container.children];
+  const categories=[
+    ['stats','통계 · 가격 제보',[0]],
+    ['support','후원 · 포인트',[4,6]],
+    ['members','회원 관리',[5,7]],
+    ['ads','광고 관리',[1,8,11]],
+    ['hotdeals','핫딜 관리',[9]],
+    ['community','커뮤니티 관리',[3]],
+    ['articles','여행정보 관리',[2]],
+  ];
+  const shell=document.createElement('div');shell.className='admin-workspace';
+  const nav=document.createElement('nav');nav.className='admin-sidebar';nav.setAttribute('aria-label','관리자 메뉴');
+  const main=document.createElement('div');main.className='admin-workspace-content';
+  const panels=new Map();const buttons=new Map();
+  function select(key){
+    for(const [id,panel] of panels)panel.hidden=id!==key;
+    for(const [id,button] of buttons){if(id===key)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}
+    onSelect(key);
+  }
+  for(const [id,label,indexes] of categories){
+    const panel=document.createElement('section');panel.className='admin-category';panel.id='admin-category-'+id;panel.setAttribute('aria-label',label);
+    for(const index of indexes)if(sections[index])panel.append(sections[index]);
+    panels.set(id,panel);main.append(panel);
+    const button=document.createElement('button');button.type='button';button.textContent=label;button.setAttribute('aria-controls',panel.id);
+    button.onclick=()=>select(id);buttons.set(id,button);nav.append(button);
+  }
+  shell.append(nav,main);container.replaceChildren(shell);select(panels.has(initial)?initial:'stats');
 }
 
 function installLiveEvents({connect, checked, accountState, showPage, updateMemberHeader}) {
@@ -1907,6 +1950,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         : '이벤트 글 등록 내역이 없습니다.';
     } catch { spending.textContent = '이벤트 포인트 사용 내역을 불러올 수 없습니다.'; }
   }
+  let adminCategory='stats';
   async function adminPage() {
     const [businesses, credits] = await Promise.all([
       checked(client.from('tripfact_profiles').select('user_id,business_name').eq('member_type','business')
@@ -1918,7 +1962,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       section('광고 구역 ON/OFF', '<div id="adminAdVisibility"></div>') +
       section('AI 여행정보 · 자동 글·이미지', '<div id="adminArticles"></div>') +
       section('지금 다낭 신고 관리', '<div id="adminSocial"></div>') +
-      section('충전 신청 <span id="adminPendingCount"></span>', '<div id="adminPendingRows"></div>') +
+      section('후원 신청 <span id="adminPendingCount"></span>', '<div id="adminPendingRows"></div>') +
       section('업체 가입 확인', businesses.length ? businesses.map(row => `<div class="booking-row">
         ${esc(row.business_name)} <button class="vendor-link" data-business="${esc(row.user_id)}">업체 승인</button></div>`).join('') : '<p>확인할 업체가 없습니다.</p>') +
       section('포인트 지급 내역', credits.length ? credits.map(row => `<div class="booking-row">
@@ -1927,6 +1971,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       section('광고 구역 단가', '<p>30일 이용료입니다. 90일은 30일 이용료의 3배이며, 같은 구역의 가격은 모든 도시에 공통 적용됩니다. C 자리는 광고 노출 설정에서 추가로 열 수 있습니다.</p><div id="adminAdRates"></div>') +
       section('핫딜 글 등록비', '<div id="adminEventFee"></div><h3>핫딜 포인트 사용 내역</h3><div id="adminEventSpending"></div>') +
       section('광고 일정', '<p>광고 예약 일정은 연결 준비 중입니다.</p>');
+    renderAdminWorkspace($('memberContent'),adminCategory,key=>{adminCategory=key;});
     $('memberContent').querySelectorAll('[data-business]').forEach(control => {
       control.onclick = async () => {
         control.disabled = true;
@@ -1968,6 +2013,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       if (version !== pageVersion || pane.classList.contains('hidden')) return;
       if (!session) { authForm(); return; }
       if (view === 'admin' && admin) {
+        adminCategory='stats';
         await adminPage();
         refreshTimer = setInterval(pollAlerts, 30000);
       } else if (view === 'business') await business();
@@ -2789,7 +2835,7 @@ function renderAdminInsights(container,call) {
     <div data-traffic role="status"></div><h3>구매가격 제보</h3>
     <label>제보 상태 <select data-reports><option value="pending">검토 대기</option><option value="flagged">이상가격·단위 확인</option><option value="approved">승인</option><option value="rejected">제외</option></select></label>
     <p class="vendor-help">최근 100건 · 기존 최저가의 50% 미만 또는 최고가의 150% 초과는 별도 검토합니다. 승인한 최근 30일 구매 제보는 상품 상세에서 단위별 가격 범위로 공개됩니다.</p><div data-report-list></div>`;
-  const table=(heads,rows)=>`<div class="insight-table"><table><thead><tr>${heads.map(x=>'<th>'+esc(x)+'</th>').join('')}</tr></thead><tbody>${rows.map(row=>'<tr>'+row.map(x=>'<td>'+esc(x)+'</td>').join('')+'</tr>').join('')}</tbody></table></div>`;
+  const table=(heads,rows)=>`<div class="insight-table"><table><thead><tr>${heads.map(x=>'<th>'+esc(x)+'</th>').join('')}</tr></thead><tbody>${rows.map(row=>'<tr>'+row.map(x=>'<td>'+esc(x??'—')+'</td>').join('')+'</tr>').join('')}</tbody></table></div>`;
   let trafficVersion=0, reportVersion=0;
   async function traffic() {
     const version=++trafficVersion, area=container.querySelector('[data-traffic]');
@@ -2800,7 +2846,7 @@ function renderAdminInsights(container,call) {
       area.innerHTML=`<div class="insight-totals">${[['방문 세션',data.visits],['페이지 조회',data.views],['클릭',data.clicks]].map(([label,n])=>'<div>'+label+'<strong>'+fmt(n)+'</strong></div>').join('')}</div>`
         +'<h3>페이지별</h3>'+table(['페이지','조회','방문 세션','클릭'],data.pages.map(r=>[names[r.page]||r.page,r.views,r.visits,r.clicks]))
         +'<h3>일별</h3>'+table(['날짜','조회','방문 세션','클릭'],data.days.map(r=>[r.day,r.views,r.visits,r.clicks]))
-        +'<h3>클릭 상위 50개</h3>'+table(['페이지','클릭 대상','횟수'],data.targets.map(r=>[names[r.page]||r.page,r.target,r.clicks]));
+        +'<h3>클릭 상위 50개</h3>'+table(['페이지','클릭 대상','횟수'],(data.targets||[]).filter(r=>r&&typeof r==='object'&&r.page&&r.target).map(r=>[names[r.page]||r.page,r.target,r.clicks]));
     } catch { area.textContent='통계 연결을 확인해 주세요. Supabase에 009 통계·제보 SQL을 적용해야 합니다.'; }
   }
   async function reports() {
