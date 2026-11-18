@@ -238,10 +238,15 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 #homePage>.tools-grid { order:1; }
 #homePage>.hero { order:2; }
 #homePage>.travel-note { order:3; }
-#homePage>.home-business-entry { order:4; }
+#homePage>.home-business-entry { order:10; }
 #homePage>.ad-placement-group { order:5; }
 #homePage>.home-community-boards { order:8; }
 .home-exchange-calculator h2 { font-size:16px;margin:0 0 10px; }
+.exchange-calculator-heading { display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:9px; }
+.exchange-calculator-heading h2 { margin:0; }
+.exchange-calculator-currency { display:flex;background:#f1f4ed;border-radius:10px;padding:3px;gap:2px; }
+.exchange-calculator-currency button { font-size:12px;padding:7px 9px;border-radius:8px;white-space:nowrap; }
+.exchange-calculator-currency button.active { background:#fff;color:#21846d;box-shadow:0 1px 3px #29432d12;font-weight:750; }
 .home-exchange-calculator .calc-mini { display:grid;grid-template-columns:minmax(120px,1fr) minmax(0,1fr);gap:8px 14px;align-items:center;margin:0; }
 .home-exchange-calculator label { grid-column:1/-1;font-size:12px!important; }
 .home-exchange-calculator input { width:100%;min-width:0;margin:0; }
@@ -902,55 +907,65 @@ function placeReviewPreview(place) {
   const weatherPanel=$('weatherDetails').closest('.panel');weatherPanel.classList.add('home-weather-panel');
   $('exchange').closest('.panel').classList.add('home-exchange-panel');
   const calculator=document.createElement('section');calculator.className='panel home-exchange-calculator';
-  calculator.innerHTML='<h2>환전 계산기</h2><div data-exchange-calculator></div><p class="vendor-help">금은방 평균 기준 예상 금액 · 실제 환전액과 다를 수 있어요.</p>';
+  calculator.innerHTML='<div class="exchange-calculator-heading"><h2>환전 계산기</h2><div class="exchange-calculator-currency" role="group" aria-label="환전할 통화 선택"><button type="button" data-calc-currency="USD">달러 USD</button><button type="button" data-calc-currency="KRW">한국돈 KRW</button></div></div><div data-exchange-calculator></div><p class="vendor-help" data-exchange-basis></p>';
   grid.append(calculator);
+  const roundVnd=value=>Math.round(value/1000)*1000;
+  const hasAverage=row=>row?.posts>0&&Number.isFinite(row.mean_vnd)&&row.mean_vnd>0&&row.nominal>0;
+  function averageFor(code){
+    const rows=rateData.rates.filter(row=>row.currency===code&&hasAverage(row));
+    return rows.find(row=>row.category==='금은방')||rows.find(row=>row.category==='미분류')||null;
+  }
+  calculator.querySelectorAll('[data-calc-currency]').forEach(button=>{button.onclick=()=>setCurrency(button.dataset.calcCurrency);});
   calculateExchange=function(){
     const input=$('exchangeAmount'),output=$('exchangeOutput'),amount=Number(input.value);
-    const rate=rateData.rates.find(r=>r.currency===currency&&r.category==='금은방'&&r.posts>0&&Number.isFinite(r.mean_vnd)&&r.nominal>0);
+    const rate=averageFor(currency);
     if(!input.value.trim()||!Number.isFinite(amount)||amount<0){output.textContent='환전할 금액을 입력해 주세요.';return;}
-    const result=rate?amount/rate.nominal*rate.mean_vnd:null;
-    output.textContent=result!==null&&Number.isFinite(result)?'약 '+fmt(result)+' 동': '계산 가능한 금은방 환율 자료가 없습니다.';
+    const result=rate?amount/rate.nominal*roundVnd(rate.mean_vnd):null;
+    output.textContent=result!==null&&Number.isFinite(result)?'약 '+fmt(roundVnd(result))+' 동': '선택한 통화의 평균 환율 자료가 없습니다.';
   };
   const previousSetCurrency = setCurrency;
   setCurrency = function (selected) {
+    const savedAmount=selected===currency?$('exchangeAmount')?.value:null;
     previousSetCurrency(selected);
     const summary = $('exchange').querySelector('.rate-feature');
     const rows = (danangSheet.exchange_locations || []).filter(row =>
       row.currency === selected && row.to >= oldestRateEnd && row.to <= kstToday);
-    const hasAverage = row => row?.posts > 0 && Number.isFinite(row.mean_vnd);
-    const gold = rateData.rates.find(row => row.currency === selected && row.category === '금은방');
-    const unknown = rateData.rates.find(row => row.currency === selected && row.category === '미분류');
-    const headline = hasAverage(gold) ? gold : hasAverage(unknown) ? unknown : null;
-    const heading = headline ? (headline === gold ? '금은방 전체 평균' : '환전 방식 미분류 평균') : '최근 7일 평균';
+    const headline=averageFor(selected);
+    const heading=headline?(headline.category==='금은방'?'금은방 전체 평균':'환전 방식 미분류 평균'):'최근 7일 평균';
     summary.innerHTML = '<small>' + heading + '</small>' + (headline
-      ? '<div class="large">' + fmt(headline.mean_vnd) + '<span>동 (VND)</span></div>'
+      ? '<div class="large">' + fmt(roundVnd(headline.mean_vnd)) + '<span>동 (VND)</span></div>'
         + '<div class="samples">게시글 ' + fmt(headline.posts) + '건 · '
         + escapeHTML(headline.from + ' ~ ' + headline.to) + '</div>' : '')
       + names.map(name => {
       const row = rows.find(entry => entry.location === name);
       const available = row?.posts > 0 && Number.isFinite(row.mean_vnd);
       return `<div class="rate-line"><div>${name} ${available ? '<span>글 ' + fmt(row.posts) + '건</span>' : ''}</div>
-        <strong>${available ? fmt(row.mean_vnd) + ' 동' : '자료 없음'}</strong></div>`;
+        <strong>${available ? fmt(roundVnd(row.mean_vnd)) + ' 동' : '자료 없음'}</strong></div>`;
     }).join('') + (rows.length && (!headline || rows[0].from !== headline.from || rows[0].to !== headline.to)
       ? '<div class="samples">장소별 집계 ' + escapeHTML(rows[0].from + ' ~ ' + rows[0].to) + '</div>' : '');
     const details = $('exchangeExpanded');
     details.querySelector('.rate-foot').insertAdjacentHTML('beforebegin',
-      '<p class="rate-foot">계산기는 금은방 전체 평균을 사용합니다. 환전소 이름을 확인할 수 있는 글만 위 업체별 평균에 포함합니다.</p>');
+      '<p class="rate-foot">계산기는 위에 표시한 평균 환율을 사용합니다. 평균 환율과 예상 수령액은 천 동 단위로 반올림합니다. 환전소가 확인된 글은 업체별로 집계합니다.</p>');
     const airport = [...details.querySelectorAll('.rate-line')].find(row => row.firstElementChild.textContent.trim().startsWith('공항'));
     airport?.remove();
     const calc=details.querySelector('.calc-mini');
-    calc.querySelector('input').value=selected==='USD'?'100':'50000';
+    calc.querySelector('input').value=savedAmount??(selected==='USD'?'100':'50000');
     calculator.querySelector('[data-exchange-calculator]').replaceChildren(calc);
     calc.querySelector('label').textContent=selected==='USD'?'환전할 달러 (USD)':'환전할 원화 (KRW)';
     $('exchangeAmount').setAttribute('inputmode','decimal');
     $('exchangeAmount').step=selected==='USD'?'0.01':'1';
     $('exchangeOutput').setAttribute('aria-live','polite');
+    calculator.querySelectorAll('[data-calc-currency]').forEach(button=>{
+      button.classList.toggle('active',button.dataset.calcCurrency===selected);
+      button.setAttribute('aria-pressed',button.dataset.calcCurrency===selected);
+    });
+    calculator.querySelector('[data-exchange-basis]').textContent=headline
+      ? fmt(headline.nominal)+(selected==='USD'?'달러':'원')+'당 '+fmt(roundVnd(headline.mean_vnd))+'동 · '+heading+' · 천 동 단위 반올림'
+      : '현재 선택한 통화의 확인된 평균 환율이 없습니다.';
     document.querySelector('.rate-details summary').textContent='환율 집계 기준 자세히 보기';
     calculateExchange();
   };
-  const goldAvailable = code => rateData.rates.some(row =>
-    row.currency === code && row.category === '금은방' && row.posts > 0 && Number.isFinite(row.mean_vnd));
-  setCurrency(!goldAvailable(currency) && goldAvailable('KRW') ? 'KRW' : currency);
+  setCurrency(!averageFor(currency)&&averageFor('KRW')?'KRW':currency);
 })();
 
 (() => {
@@ -2757,6 +2772,8 @@ function renderAdminInsights(container,call) {
   };
   for(const zone of ['social-all','social-daily','social-question','social-together'])examples[zone]=examples.home;
   const previousSlot=adSlot;
+  const businessEntry=document.querySelector('.home-business-entry');
+  if(businessEntry)$('homePage').append(businessEntry);
   adSlot=function(zone,inline=false){
     if(!labels[zone])return previousSlot(zone,inline);
     return `<aside class="ad-slot ad-placement-group ${visibility[zone]?'':'ad-disabled'}" data-zone="${zone}" aria-label="${labels[zone]} 광고 영역">
