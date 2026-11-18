@@ -1417,6 +1417,7 @@ function renderAdminWorkspace(container,initial='stats',onSelect=()=>{}) {
   const main=document.createElement('div');main.className='admin-workspace-content';
   const panels=new Map();const buttons=new Map();
   function select(key){
+    window.tripfactCloseExpanded?.(container);
     for(const [id,panel] of panels)panel.hidden=id!==key;
     for(const [id,button] of buttons){if(id===key)button.setAttribute('aria-current','page');else button.removeAttribute('aria-current');}
     onSelect(key);
@@ -1512,7 +1513,9 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
   const writer = $('eventWriter');
   const posts = $('eventPosts');
   let filter = '전체';
-  let listingVersion = 0;
+  let listingVersion = 0,writerVersion=0;
+  const previousSwitch=switchTab;
+  switchTab=function(tab){writerVersion++;writer.replaceChildren();writer.classList.add('hidden');previousSwitch(tab);};
   let listLimit=30;
   const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
   document.querySelector('#eventsPage .eyebrow')?.remove();
@@ -1536,7 +1539,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       const control = document.createElement('button');
       control.textContent = category;
       control.classList.toggle('active', category === filter);
-      control.onclick = () => { filter = category;listLimit=30; renderEvents(); };
+      control.onclick = () => {writerVersion++;writer.replaceChildren();writer.classList.add('hidden');filter=category;listLimit=30;renderEvents();};
       return control;
     }));
     posts.textContent = '핫딜을 불러오는 중…';
@@ -1607,6 +1610,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
 
   openEventWriter = async function () {
     switchTab('events');
+    const currentWriter=++writerVersion;
     writer.classList.remove('hidden');
     writer.textContent = '업체회원 정보를 확인하는 중…';
     try {
@@ -1617,6 +1621,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       const profile = await checked(client.from('tripfact_profiles').select('member_type,business_approved,business_name')
         .eq('user_id',session.user.id).maybeSingle());
       const operator=await checked(client.rpc('tripfact_is_admin'))===true;
+      if(currentWriter!==writerVersion||currentTab!=='events')return;
       if (!operator && (profile?.member_type !== 'business' || !profile.business_approved)) {
         writer.textContent = '승인된 업체회원만 핫딜을 등록할 수 있습니다. 업체회원 가입 후 업체센터에서 승인 상태를 확인해 주세요.';
         return;
@@ -1628,6 +1633,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       const prices=Object.fromEntries(rates.map(r=>[r.zone_id,r.daily_points]));
       if(prices['event-post']==null||prices['super-event-post']==null)throw new Error('등록비 설정을 확인해 주세요.');
       let fee=operator?0:prices['event-post'];
+      if(currentWriter!==writerVersion||currentTab!=='events')return;
       writer.innerHTML = `<h2 style="font-size:17px">핫딜 등록</h2>
         ${operator?'':'<p class="vendor-help" data-deal-price>등록비 <strong>'+Number(fee).toLocaleString('ko-KR')+'P / 건</strong> · 잔여 '+Number(points).toLocaleString('ko-KR')+'P</p>'}
         <form><label class="field" for="liveEventTier">등록 유형</label><select id="liveEventTier" name="tier"><option value="hotdeal">핫딜</option><option value="super">슈퍼핫딜 · 상단 영역</option></select>
@@ -1679,10 +1685,12 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
             const {error} = await client.storage.from(bucket).upload(paths[index],photo,{contentType:photo.type});
             if (error && String(error.statusCode) !== '409' && error.error !== 'Duplicate') throw new Error(error.message);
           }
+          if(currentWriter!==writerVersion||currentTab!=='events')return;
           const paid = await checked(client.rpc('tripfact_publish_hotdeal_tier',{
             p_id:id,p_category:values.get('category'),p_title:title,p_body:body,p_inquiry_url:url,
             p_images:paths,p_expected_points:fee,p_appeal:appeal,p_business_name:business,p_tier:values.get('tier'),
           }));
+          if(currentWriter!==writerVersion||currentTab!=='events')return;
           writer.classList.add('hidden');
           toast(operator?'핫딜을 등록했습니다.':'핫딜을 등록했습니다. ' + Number(paid).toLocaleString('ko-KR') + 'P 사용');
           filter = '전체';
@@ -1693,6 +1701,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       };
       writer.scrollIntoView({block:'start'});
     } catch {
+      if(currentWriter!==writerVersion||currentTab!=='events')return;
       writer.textContent = '핫딜 등록 설정을 불러오지 못했습니다. 업체센터에서 포인트와 연결 상태를 확인해 주세요.';
     }
   };
@@ -2451,7 +2460,14 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
   const status=page.querySelector('[role=status]'),writer=page.querySelector('[data-writer]');
   const state={rows:[],selected:null,version:0,busy:false,drafts:new Map(),category:''};
   const categories={daily:'일상',question:'질문',together:'같이해요'};
+  let composerVersion=0;
+  function clearWriting(){
+    composerVersion++;writer.replaceChildren();state.drafts.clear();state.selected=null;
+    const reply=$('communityReply');if(reply)reply.remove();
+    page.querySelector('.community-options').open=false;
+  }
   function selectCategory(category) {
+    clearWriting();
     state.category=category;
     page.querySelectorAll('[data-category-filter]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.categoryFilter===category));
     page.querySelector('[data-mine]').setAttribute('aria-pressed',category==='mine');
@@ -2684,7 +2700,9 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     }catch(error){if(version===state.version){say(error.message);content.replaceChildren(control('‹ 목록으로',()=>loadFeed()));}}
   }
   async function compose() {
+    const version=++composerVersion;
     await requireAccount();
+    if(version!==composerVersion||currentTab!=='social')return;
     writer.innerHTML=`<form id="communityComposer" class="panel community-composer"><h2>오늘의 다낭을 나눠요</h2>
       <p class="vendor-help">계정의 표시 이름으로 게시됩니다. 성별·나이는 선택해서 이야기해 주세요. 링크·연락처·외부 메신저 유도·홍보성 도배는 등록할 수 없습니다.</p>
       <label>카테고리<select name="category"><option value="daily">일상</option><option value="question">질문</option><option value="together">같이해요</option></select></label>
@@ -2726,7 +2744,10 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         }
         const data=Object.fromEntries(new FormData(form));delete data.photos;data.images=paths;
         data.kind=data.category==='together'&&form.elements.room.checked?'room':'daily';
-        await action('create',requestId,data);writer.replaceChildren();
+        if(version!==composerVersion||currentTab!=='social')return;
+        await action('create',requestId,data);
+        if(version!==composerVersion||currentTab!=='social')return;
+        writer.replaceChildren();
         page.querySelector('[data-region]').value='';state.category='';
         page.querySelectorAll('[data-category-filter]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.categoryFilter===''));
         page.querySelector('[data-mine]').setAttribute('aria-pressed','false');
@@ -2763,6 +2784,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
   more.onclick=()=>loadFeed(true);
   const show=switchTab;
   switchTab=function(tab) {
+    clearWriting();
     show(tab);page.classList.toggle('hidden',tab!=='social');
     if(tab==='social'){if(!openingBlocks)loadFeed();}else{state.version++;}
     if(tab==='home')refreshHomeBoards();
@@ -3219,7 +3241,7 @@ function renderBusinessWorkspace(container,sections,selected,onSelect){
   const stats=document.createElement('section');stats.className='panel';stats.innerHTML='<h2>통계</h2><div id="businessStatistics"></div>';
   const support=document.createElement('div');support.append(sections[1],sections[2]);
   const campaigns=document.createElement('div');const own=document.createElement('section');own.className='panel';own.innerHTML='<h2>광고 집행</h2><div id="businessBooking"></div><h3>집행 내역</h3><div id="businessCampaigns"></div>';campaigns.append(own,sections[3]);
-  function select(key){for(const [id,panel] of panels)panel.hidden=id!==key;for(const [id,button] of buttons)button.setAttribute('aria-pressed',String(id===key));onSelect(key);}
+  function select(key){window.tripfactCloseExpanded?.(container);for(const [id,panel] of panels)panel.hidden=id!==key;for(const [id,button] of buttons)button.setAttribute('aria-pressed',String(id===key));onSelect(key);}
   for(const [key,title,panel] of [['statistics','통계',stats],['support','후원하기',support],['campaigns','광고 집행',campaigns]]){const button=document.createElement('button');button.type='button';button.className='vendor-link';button.textContent=title;button.onclick=()=>select(key);nav.append(button);panels.set(key,panel);buttons.set(key,button);}
   shell.append(nav,stats,support,campaigns);container.replaceChildren(sections[0],shell);select(panels.has(selected)?selected:'statistics');
 }
@@ -3349,5 +3371,28 @@ async function renderAdminArticles(container,call,generate,readArticle){
     for(const job of data.jobs){const row=document.createElement('p');row.textContent=job.run_day+' · '+({running:'진행 중',complete:'완료',failed:'실패',skipped:'새 자료 없음'})[job.state]+' · '+job.message;jobs.append(row);}
   }catch{container.textContent='Supabase에 015 여행정보 SQL을 적용한 뒤 확인해 주세요.';}
 }
+
+(() => {
+  function closeExpanded(root=document){
+    root.querySelectorAll('details[open]').forEach(details=>{
+      details.open=false;
+      const summary=details.querySelector('summary');summary?.setAttribute('aria-expanded','false');
+      const target=summary?.getAttribute('aria-controls');if(target)document.getElementById(target)?.classList.add('hidden');
+    });
+    root.querySelectorAll('dialog[open]').forEach(dialog=>dialog.close());
+    root.querySelectorAll('.admin-member-editor,.admin-point-editor').forEach(editor=>editor.remove());
+  }
+  window.tripfactCloseExpanded=closeExpanded;
+  const previous=switchTab;
+  switchTab=function(tab){
+    const old=currentTab;
+    closeExpanded();
+    const modal=document.getElementById('modal');
+    if(typeof closeModal==='function'&&modal&&!modal.classList.contains('hidden'))closeModal();
+    if(old!==tab&&(old==='market'||tab==='market')&&typeof resetShop==='function')resetShop();
+    previous(tab);
+    closeExpanded();
+  };
+})();
 </script></body>
 </html>
