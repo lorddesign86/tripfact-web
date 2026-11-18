@@ -43,6 +43,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .rate-preview figcaption{font-size:11px;margin-top:8px;line-height:1.5}.rate-mock{background:#fffefa;border:1px solid #dbe6d5;border-radius:10px;overflow:hidden}
 .rate-mock b{display:block;background:#e6eee0;padding:7px 8px;font-size:10px}.rate-mock div{padding:6px 8px;font-size:10px;color:#53665a;border-top:1px solid #edf0ea}
 .rate-mock .rate-placement{background:#fff2d4;color:#694817;border:1px dashed #d59c38;margin:3px 5px;border-radius:4px;font-weight:700}
+.rate-mock .rate-placement-active{background:#e1f0dd;border:2px solid #21846d;color:#174b39}
+.rate-edit[data-missing=true] small{grid-column:2/-1;color:#936744;font-size:11px}
 @media(max-width:600px){.rate-workspace{grid-template-columns:1fr}.rate-preview{grid-row:1}.rate-edit{grid-template-columns:auto minmax(0,1fr) 73px auto;gap:5px}}
 
 .desktop-nav{gap:clamp(12px,2vw,26px)}
@@ -252,6 +254,13 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .home-exchange-calculator input { width:100%;min-width:0;margin:0; }
 .home-exchange-calculator output { font-size:23px;font-weight:800;color:#21846d;overflow-wrap:anywhere; }
 .home-exchange-calculator .vendor-help { margin:8px 0 0;font-size:11px; }
+.exchange-input-column,.exchange-result-column { min-width:0; }
+.home-exchange-calculator .exchange-input-column label { display:block;position:static;width:auto;height:auto;clip-path:none;overflow:visible;white-space:normal;margin-bottom:5px;font-size:11px!important;line-height:1.4; }
+.exchange-result-label { display:block;font-size:11px;line-height:1.4;color:#71816f;margin-bottom:5px; }
+.home-exchange-calculator .exchange-result-column output { display:block;font-size:13px;line-height:1.5; }
+.home-exchange-calculator .exchange-result-column .exchange-output-ready { font-size:clamp(16px,4.5vw,23px);font-weight:800;line-height:1.3; }
+.exchange-output-ready span { display:block;overflow-wrap:anywhere; }
+.exchange-output-ready small { display:block;font-size:10px;font-weight:500;margin-top:2px; }
 @media(max-width:760px){
   .tools-grid { grid-template-columns:minmax(0,1fr)!important;gap:10px!important;align-items:start; }
   .tools-grid>.panel { padding:13px!important;min-height:0!important;height:auto!important; }
@@ -912,16 +921,31 @@ function placeReviewPreview(place) {
   const roundVnd=value=>Math.round(value/1000)*1000;
   const hasAverage=row=>row?.posts>0&&Number.isFinite(row.mean_vnd)&&row.mean_vnd>0&&row.nominal>0;
   function averageFor(code){
-    const rows=rateData.rates.filter(row=>row.currency===code&&hasAverage(row));
-    return rows.find(row=>row.category==='금은방')||rows.find(row=>row.category==='미분류')||null;
+    const nominal=code==='USD'?100:50000;
+    const rows=rateData.rates.filter(row=>row.currency===code&&hasAverage(row)&&row.nominal===nominal);
+    const collected=rows.find(row=>row.category==='금은방')||rows.find(row=>row.category==='미분류');
+    if(collected)return collected;
+    const shops=names.filter(name=>name!=='공항');
+    const valid=row=>row.posts>0&&Number.isFinite(row.mean_vnd)&&row.mean_vnd>0&&row.to>=oldestRateEnd&&row.to<=kstToday;
+    const direct=(danangSheet.exchange_locations||[]).filter(row=>row.currency===code&&shops.includes(row.location)&&valid(row));
+    const candidates=direct.length?direct:rows.filter(row=>shops.includes(row.category)&&valid(row));
+    if(!candidates.length)return null;
+    const latest=candidates.slice().sort((a,b)=>b.to.localeCompare(a.to)||b.from.localeCompare(a.from))[0];
+    const matching=candidates.filter(row=>row.from===latest.from&&row.to===latest.to);
+    const posts=matching.reduce((sum,row)=>sum+row.posts,0);
+    return {category:'금은방',derived:true,nominal,posts,mean_vnd:matching.reduce((sum,row)=>sum+row.mean_vnd*row.posts,0)/posts,from:latest.from,to:latest.to};
   }
   calculator.querySelectorAll('[data-calc-currency]').forEach(button=>{button.onclick=()=>setCurrency(button.dataset.calcCurrency);});
   calculateExchange=function(){
     const input=$('exchangeAmount'),output=$('exchangeOutput'),amount=Number(input.value);
     const rate=averageFor(currency);
-    if(!input.value.trim()||!Number.isFinite(amount)||amount<0){output.textContent='환전할 금액을 입력해 주세요.';return;}
+    output.classList.remove('exchange-output-ready');
+    if(!input.value.trim()||!Number.isFinite(amount)||amount<0){output.textContent='금액을 입력해 주세요.';return;}
     const result=rate?amount/rate.nominal*roundVnd(rate.mean_vnd):null;
-    output.textContent=result!==null&&Number.isFinite(result)?'약 '+fmt(roundVnd(result))+' 동': '선택한 통화의 평균 환율 자료가 없습니다.';
+    if(result!==null&&Number.isFinite(result)){
+      output.innerHTML='<span>약 '+fmt(roundVnd(result))+'</span><small>동 (VND)</small>';
+      output.classList.add('exchange-output-ready');
+    }else output.textContent='확인된 평균 환율이 없습니다.';
   };
   const previousSetCurrency = setCurrency;
   setCurrency = function (selected) {
@@ -931,7 +955,7 @@ function placeReviewPreview(place) {
     const rows = (danangSheet.exchange_locations || []).filter(row =>
       row.currency === selected && row.to >= oldestRateEnd && row.to <= kstToday);
     const headline=averageFor(selected);
-    const heading=headline?(headline.category==='금은방'?'금은방 전체 평균':'환전 방식 미분류 평균'):'최근 7일 평균';
+    const heading=headline?(headline.derived?'금은방 확인 자료 평균':headline.category==='금은방'?'금은방 전체 평균':'환전 방식 미분류 평균'):'최근 7일 평균';
     summary.innerHTML = '<small>' + heading + '</small>' + (headline
       ? '<div class="large">' + fmt(roundVnd(headline.mean_vnd)) + '<span>동 (VND)</span></div>'
         + '<div class="samples">게시글 ' + fmt(headline.posts) + '건 · '
@@ -952,6 +976,11 @@ function placeReviewPreview(place) {
     calc.querySelector('input').value=savedAmount??(selected==='USD'?'100':'50000');
     calculator.querySelector('[data-exchange-calculator]').replaceChildren(calc);
     calc.querySelector('label').textContent=selected==='USD'?'환전할 달러 (USD)':'환전할 원화 (KRW)';
+    const inputColumn=document.createElement('div');inputColumn.className='exchange-input-column';
+    inputColumn.append(calc.querySelector('label'),calc.querySelector('input'));
+    const resultColumn=document.createElement('div');resultColumn.className='exchange-result-column';
+    const resultLabel=document.createElement('span');resultLabel.className='exchange-result-label';resultLabel.textContent='예상 수령액';
+    resultColumn.append(resultLabel,calc.querySelector('output'));calc.replaceChildren(inputColumn,resultColumn);
     $('exchangeAmount').setAttribute('inputmode','decimal');
     $('exchangeAmount').step=selected==='USD'?'0.01':'1';
     $('exchangeOutput').setAttribute('aria-live','polite');
@@ -1096,12 +1125,11 @@ function placeReviewPreview(place) {
 
 function renderAdminRates(container, rates, zones, save) {
   const groups = [
-    ['여행 홈', id => id === 'home' || id.startsWith('home-'), ['날씨 · 환율', '광고', '쇼핑 배너 · 바로가기']],
-    ['쇼핑시세', id => id === 'shopping', ['품목 검색 · 시세', '광고']],
-    ['뷰티/미용', id => /^(beauty-menu|massage|nail|barber)(-|$)/.test(id), ['광고', '업체 목록']],
-    ['맛집/카페', id => /^(food-menu|dining|cafe)(-|$)/.test(id), ['광고', '업체 목록']],
-    ['이벤트', id => id === 'events-top', ['광고', '이벤트 목록']],
-    ['내 찜', id => id === 'favorites-bottom', ['저장한 목록', '광고']],
+    ['홈', id => /^home-[ab]$/.test(id), ['오늘 날씨','환율 · 계산기','쇼핑 배너','광고 A','광고 B','커뮤니티 최신 글','업체 안내']],
+    ['쇼핑시세', id => /^shopping-[ab]$/.test(id), ['품목 검색 · 시세 · 계산기','광고 A','광고 B','가격 언급이 많은 품목']],
+    ['지금 다낭', id => /^social-(all|daily|question|together)-[ab]$/.test(id), ['카테고리 · 지역 필터','광고 A','광고 B','최신 글 목록']],
+    ['핫딜', id => /^events-top-[ab]$/.test(id), ['광고 A','광고 B','카테고리 필터','핫딜 목록']],
+    ['내 찜', id => /^favorites-bottom-[ab]$/.test(id), ['찜 목록 · 예상 합계','공유 · 이미지 저장','광고 A','광고 B']],
   ];
   const rows = new Map(rates.map(rate => [rate.zone_id, rate]));
   const draft = new Map();
@@ -1110,8 +1138,8 @@ function renderAdminRates(container, rates, zones, save) {
   let activeZone = null;
   let busy = false;
   const format = value => Number(value).toLocaleString('ko-KR');
-  const visibleZones = () => zones.filter(zone => rows.has(zone.id) && groups[groupIndex][1](zone.id));
-  const zoneLabel = zone => zone.name.split(' · ').at(-1);
+  const visibleZones = () => zones.filter(zone => groups[groupIndex][1](zone.id));
+  const zoneLabel = zone => zone.name;
   container.innerHTML = `<div class="rate-pages" aria-label="광고 페이지"></div>
     <form class="rate-tools">
       <button type="button" class="vendor-link rate-select-page">이 페이지 선택</button>
@@ -1134,7 +1162,7 @@ function renderAdminRates(container, rates, zones, save) {
     apply.disabled = busy || !selected.size;
     saveChanges.disabled = busy || !draft.size;
     for (const element of container.querySelectorAll('.rate-edit input, .rate-edit button[type=submit]')) {
-      element.disabled = busy;
+      element.disabled = busy || element.closest('.rate-edit').dataset.missing==='true';
     }
   }
   function preview(zone) {
@@ -1148,12 +1176,10 @@ function renderAdminRates(container, rates, zones, save) {
     const heading = document.createElement('b');
     heading.textContent = groups[groupIndex][0];
     mock.append(heading);
-    const blocks = zone?.id.startsWith('home-') ? [zoneLabel(zone), '광고', '업체 카드']
-      : zone?.id.endsWith('-menu') ? ['광고', '업종 선택 · 지역 필터', '업체 목록']
-      : groupIndex === 2 || groupIndex === 3 ? ['업종 선택 · 지역 필터', '광고', '업체 목록'] : groups[groupIndex][2];
+    const blocks=groups[groupIndex][2];
     for (const block of blocks) {
       const label = document.createElement('div');
-      if (block === '광고') label.className = 'rate-placement';
+      if (block.startsWith('광고 ')) label.className = 'rate-placement'+(zone?.id.endsWith('-'+block.at(-1).toLowerCase())?' rate-placement-active':'');
       label.textContent = block;
       mock.append(label);
     }
@@ -1194,13 +1220,18 @@ function renderAdminRates(container, rates, zones, save) {
       checkbox.onchange = () => { if (checkbox.checked) selected.add(zone.id); else selected.delete(zone.id); updateTools(); };
       const input = row.elements.daily;
       input.setAttribute('aria-label', zoneLabel(zone) + ' 하루 단가');
-      input.value = draft.get(zone.id) ?? rows.get(zone.id).daily_points;
+      const rate=rows.get(zone.id);
+      if(!rate){
+        input.disabled=true;input.placeholder='미설정';row.querySelector('[type=submit]').disabled=true;
+        checkbox.disabled=true;row.dataset.missing='true';
+        const note=document.createElement('small');note.textContent='014 광고 구역 SQL 적용 필요';row.append(note);
+      }else input.value=draft.get(zone.id)??rate.daily_points;
       input.oninput = () => {
-        if (input.value !== '' && Number(input.value) === rows.get(zone.id).daily_points) draft.delete(zone.id);
+        if (input.value !== '' && Number(input.value) === rows.get(zone.id)?.daily_points) draft.delete(zone.id);
         else draft.set(zone.id, input.value);
         updateTools();
       };
-      row.onsubmit = event => { event.preventDefault(); persist([[zone.id, input.value]]); };
+      row.onsubmit = event => { event.preventDefault(); if(rate)persist([[zone.id, input.value]]); };
       list.append(row);
     }
     preview(activeZone || choices[0]);
@@ -1232,7 +1263,7 @@ function renderAdminRates(container, rates, zones, save) {
     } catch (error) { status.textContent = error.message; }
     finally { busy = false; showGroup(); }
   }
-  find('.rate-select-page').onclick = () => { visibleZones().forEach(zone => selected.add(zone.id)); showGroup(); };
+  find('.rate-select-page').onclick = () => { visibleZones().filter(zone=>rows.has(zone.id)).forEach(zone => selected.add(zone.id)); showGroup(); };
   find('.rate-clear').onclick = () => { selected.clear(); showGroup(); };
   saveChanges.onclick = () => persist([...draft]);
   tools.onsubmit = event => {
@@ -1808,7 +1839,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       const byZone = new Map(rows.map(row => [row.zone_id, row]));
       container.replaceChildren();
       if (editable) {
-        renderAdminRates(container, rows, adZones, async changes => {
+        renderAdminRates(container, rows, window.tripfactAds.rateZones, async changes => {
           if (changes.length === 1) {
             const change = changes[0];
             const updated = await checked(client.rpc('tripfact_save_ad_rate', {
@@ -1821,7 +1852,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         });
         return;
       }
-      for (const zone of adZones) {
+      for (const zone of window.tripfactAds.rateZones) {
         const rate = byZone.get(zone.id);
         if (!rate) continue;
         const row = document.createElement('div');
@@ -2807,7 +2838,8 @@ function renderAdminInsights(container,call) {
     const key={'':'social-all',daily:'social-daily',question:'social-question',together:'social-together'}[category];
     anchor.innerHTML=key?adSlot(key):'';
   }
-  window.tripfactAds={labels,refresh,apply,renderCommunity};
+  const rateZones=Object.entries(labels).flatMap(([id,label])=>['A','B'].map(seat=>({id:id+'-'+seat.toLowerCase(),name:label+' '+seat})));
+  window.tripfactAds={labels,rateZones,refresh,apply,renderCommunity};
   apply(visibility);
   if(currentTab==='social'&&$('communityPage').dataset.view==='feed')renderCommunity(document.querySelector('[data-category-filter][aria-pressed=true]')?.dataset.categoryFilter||'');
   refresh();
