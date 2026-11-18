@@ -50,6 +50,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .admin-workspace{display:grid;grid-template-columns:175px minmax(0,1fr);gap:20px;align-items:start}.admin-sidebar{position:sticky;top:100px;display:flex;flex-direction:column;gap:6px;padding:12px;background:#fffefa;border:1px solid var(--line);border-radius:16px}.admin-sidebar button{width:100%;padding:12px 10px;text-align:left;border:0;border-radius:10px;background:transparent;color:#40594f;font-size:14px;line-height:1.5;cursor:pointer}.admin-sidebar button:hover{background:#f0f5ec}.admin-sidebar button[aria-current=page]{background:#21846d;color:#fff;font-weight:750}.admin-workspace-content{min-width:0}.admin-category[hidden]{display:none!important}.admin-category>.panel:first-child{margin-top:0!important}.admin-workspace .panel{min-width:0}.admin-workspace .insight-table{max-width:100%;overflow:auto}.admin-workspace .booking-row{flex-wrap:wrap;overflow-wrap:anywhere}
 @media(max-width:700px){.admin-workspace{grid-template-columns:112px minmax(0,1fr);gap:10px}.admin-sidebar{top:76px;padding:6px;border-radius:12px}.admin-sidebar button{font-size:12px;padding:10px 6px}.admin-workspace .panel{padding:14px}.admin-workspace .insight-totals{grid-template-columns:1fr}.admin-workspace .rate-workspace{grid-template-columns:1fr}.admin-workspace .rate-edit{grid-template-columns:auto minmax(0,1fr)}.admin-workspace .rate-tools{flex-wrap:wrap}.admin-workspace input,.admin-workspace select{max-width:100%;min-width:0}}
 
+.business-workspace [hidden]{display:none!important}.business-workspace [data-plot] svg{width:100%;height:auto;display:block;min-height:150px}.ad-chart-axis{display:flex;justify-content:space-between;font-size:11px;color:#718578}.campaign-form{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}.campaign-form label{display:flex;flex-direction:column;gap:5px}.campaign-form input,.campaign-form select{width:100%;min-width:0}.ad-live{text-decoration:none;color:inherit}.ad-live img{object-fit:cover}.business-workspace .insight-table{overflow:auto}.business-workspace .booking-row{flex-wrap:wrap}.business-workspace .insight-totals{grid-template-columns:repeat(auto-fit,minmax(135px,1fr))}@media(max-width:600px){.campaign-form{grid-template-columns:1fr}}
+
 .desktop-nav{gap:clamp(12px,2vw,26px)}
 .desktop-nav button{font-size:16px;color:#456254;white-space:nowrap}
 .quick button,.shop-categories button,.directory-cats button{font-size:14px}
@@ -1375,7 +1377,7 @@ function renderAdminWorkspace(container,initial='stats',onSelect=()=>{}) {
     ['stats','통계 · 가격 제보',[12,0]],
     ['support','후원 · 포인트',[4,6,13]],
     ['members','회원 관리',[5,7]],
-    ['ads','광고 관리',[1,8,9,11]],
+    ['ads','광고 관리',[1,8,14,9,11]],
     ['community','커뮤니티 관리',[3]],
     ['articles','여행정보 관리',[2]],
   ];
@@ -1784,7 +1786,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         <button class="vendor-link" id="editMemberPhoto">프로필 사진 수정</button>
         <button class="vendor-link" id="manageBlockedMembers">차단한 회원 관리</button>
       </div>
-      ${admin || profile?.member_type === 'business' ? '<button class="primary" id="openTopups">업체센터 · 후원 신청</button>' : ''}
+      ${admin || profile?.member_type === 'business' ? '<button class="primary" id="openTopups">업체센터</button>' : ''}
       ${admin ? '<button class="vendor-link" id="adminOpenHotdeal">핫딜 등록 화면</button>' : ''}
       ${admin ? '<button class="primary" id="openAdmin">관리자 화면 <span id="adminAlertCount"></span></button>' : ''}
       <button class="vendor-link" id="memberSignOut">로그아웃</button>`);
@@ -1867,6 +1869,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       if ($('adminPendingRows')) drawPending(items);
     } catch (error) { message(error.message); }
   }
+  let businessCategory='statistics';
   async function business() {
     if (!admin && (profile?.member_type !== 'business' || !profile.business_approved)) {
       $('memberContent').innerHTML = section('후원 신청',
@@ -1887,7 +1890,11 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         <button class="primary" type="submit" ${config.bank?'':'disabled'}>후원 신청하기</button></form>` : '<p>후원 계좌 안내를 준비하고 있습니다.</p>') +
       section('내 후원 내역', history.length ? history.map(row => `<div class="booking-row"><b>${money(row.amount_krw)}원 · ${row.approved_at?'승인 완료':'후원 확인 대기'}</b>
         ${esc(new Date(row.submitted_at).toLocaleString('ko-KR',{timeZone:'Asia/Seoul'}))}</div>`).join('') : '<p>신청 내역이 없습니다.</p>') +
-      section('광고 예약', '<p>기본 30일 · 장기 90일입니다. 90일 이용료는 30일의 3배입니다. 온라인 광고 예약과 포인트 차감 기능은 아직 준비 중입니다.</p><div id="businessAdRates"></div>');
+      section('광고 요금', '<p>기본 30일 · 장기 90일입니다. 90일 이용료는 30일의 3배입니다. 집행 일정은 운영자에게 문의해 주세요.</p><div id="businessAdRates"></div>');
+    const businessPanels=[...$('memberContent').children];
+    renderBusinessWorkspace($('memberContent'),businessPanels,businessCategory,key=>{businessCategory=key;});
+    renderAdvertiserStatistics($('businessStatistics'),(name,args)=>checked(client.rpc(name,args)));
+    renderAdvertiserCampaignList($('businessCampaigns'),(name,args)=>checked(client.rpc(name,args)));
     loadAdRates($('businessAdRates'), false);
     if(admin){$('adminBusinessDashboard').onclick=()=>showPage('admin');$('adminBusinessHotdeal').onclick=()=>openEventWriter();}
     const form = $('topupForm');
@@ -1990,11 +1997,12 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
   }
   let adminCategory='stats';
   async function adminPage() {
-    const [businesses, credits] = await Promise.all([
+    const [businesses, credits, advertisers] = await Promise.all([
       checked(client.from('tripfact_profiles').select('user_id,business_name').eq('member_type','business')
         .eq('business_approved',false).not('business_name','is',null).order('created_at').limit(100)),
       checked(client.from('tripfact_topups').select(requestFields).not('approved_at','is',null)
         .order('approved_at',{ascending:false}).limit(30)),
+      checked(client.from('tripfact_profiles').select('user_id,business_name').eq('member_type','business').eq('business_approved',true).order('business_name').limit(1000)),
     ]);
     $('memberContent').innerHTML = section('방문·클릭 통계와 구매가격 제보', '<div id="adminInsights"></div>') +
       section('광고 구역 ON/OFF', '<div id="adminAdVisibility"></div>') +
@@ -2010,7 +2018,8 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       section('슈퍼핫딜 · 핫딜 등록비', '<div id="adminEventFee"></div><h3>핫딜 포인트 사용 내역</h3><div id="adminEventSpending"></div>') +
       section('광고 일정', '<p>광고 예약 일정은 연결 준비 중입니다.</p>') +
       section('후원 · 포인트 통계','<div id="adminFinance"></div>') +
-      section('포인트 사용 내역','<div id="adminPointUsage"></div>');
+      section('포인트 사용 내역','<div id="adminPointUsage"></div>') +
+      section('배너 광고 집행','<div id="adminCampaigns"></div>');
     renderAdminWorkspace($('memberContent'),adminCategory,key=>{adminCategory=key;});
     $('memberContent').querySelectorAll('[data-business]').forEach(control => {
       control.onclick = async () => {
@@ -2022,6 +2031,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         finally { control.disabled = false; }
       };
     });
+    renderAdminCampaigns($('adminCampaigns'),(name,args)=>checked(client.rpc(name,args)),advertisers);
     renderAdminFinance($('adminFinance'),(name,args)=>checked(client.rpc(name,args)));
     renderAdminPointUsage($('adminPointUsage'),(name,args)=>checked(client.rpc(name,args)));
     renderAdminInsights($('adminInsights'), (name, args) => checked(client.rpc(name, args)));
@@ -2058,7 +2068,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
         adminCategory='stats';
         await adminPage();
         refreshTimer = setInterval(pollAlerts, 30000);
-      } else if (view === 'business') await business();
+      } else if (view === 'business') {businessCategory='statistics';await business();}
       else if (view === 'info') editInfo();
       else if (view === 'photo') editPhoto();
       else account();
@@ -3029,6 +3039,83 @@ async function renderAdminAdVisibility(container,call){
     container.querySelector('[data-all-on]').onclick=()=>save(true);
     container.querySelector('[data-all-off]').onclick=()=>save(false);
   }catch{container.textContent='Supabase에 013 광고 ON/OFF SQL을 적용한 뒤 확인해 주세요.';}
+}
+
+(() => {
+  let live=new Map(),visit=crypto.randomUUID(),lastTab=currentTab,queue=[],sending=false;
+  const sent=new Set();let session;
+  function sessionId(){const now=Date.now();if(!session){try{session=JSON.parse(sessionStorage.getItem('tripfact-ad-session'));}catch{}}
+    if(!session?.id||now-session.last>1800000)session={id:crypto.randomUUID(),last:now};session.last=now;
+    try{sessionStorage.setItem('tripfact-ad-session',JSON.stringify(session));}catch{}return session.id;}
+  async function flush(){if(sending||!queue.length)return;sending=true;const batch=queue.splice(0,50);
+    try{const client=await window.tripfactAccount.client();const {error}=await client.rpc('tripfact_track_ads',{p_session:batch[0].session,p_events:batch.map(({session,...e})=>e)});if(error)throw error;}
+    catch{queue=[...batch,...queue].slice(-100);}finally{sending=false;}}
+  function track(node,kind){if(!/^https?:$/.test(location.protocol)||document.hidden)return;
+    const campaign=node.dataset.campaign;if(!campaign)return;const key=campaign+visit+kind;
+    if(kind!=='click'&&sent.has(key))return;if(kind!=='click')sent.add(key);
+    queue.push({id:crypto.randomUUID(),session:sessionId(),campaign_id:campaign,visit_id:visit,kind});if(queue.length>100)queue.shift();if(kind==='click')flush();}
+  const base=adSlot;
+  adSlot=function(zone,inline=false){const holder=document.createElement('div');holder.innerHTML=base(zone,inline);
+    holder.querySelectorAll('.ad-placement').forEach((old,index)=>{const campaign=live.get(zone+'-'+['a','b','c'][index]);if(!campaign)return;
+      const link=document.createElement('a');link.className='ad-placement ad-live';link.href=campaign.link_url;link.target='_blank';link.rel='noopener noreferrer sponsored';link.dataset.campaign=campaign.id;
+      const icon=document.createElement(campaign.image_url?'img':'span');icon.className='ad-example-icon';if(campaign.image_url){icon.src=campaign.image_url;icon.alt='';icon.loading='lazy';}else icon.textContent='✨';
+      const copy=document.createElement('div');copy.className='ad-example-copy';const label=document.createElement('small');label.textContent='광고';const title=document.createElement('strong');title.textContent=campaign.title;const body=document.createElement('p');body.textContent=campaign.body;copy.append(label,title,body);link.append(icon,copy);old.replaceWith(link);
+    });return holder.innerHTML;};
+  const timers=new WeakMap(),observed=new WeakSet();
+  const observer=new IntersectionObserver(entries=>{for(const entry of entries){clearTimeout(timers.get(entry.target));if(entry.isIntersecting&&entry.intersectionRatio>=.5){timers.set(entry.target,setTimeout(()=>{if(entry.target.isConnected&&!document.hidden)track(entry.target,'visible');},1000));}}},{threshold:[0,.5]});
+  function scan(){if(lastTab!==currentTab){visit=crypto.randomUUID();lastTab=currentTab;}
+    document.querySelectorAll('[data-campaign]').forEach(node=>{if(!node.getClientRects().length)return;track(node,'page');if(!observed.has(node)){observed.add(node);observer.observe(node);}});}
+  let scheduled=false;function schedule(){if(scheduled)return;scheduled=true;requestAnimationFrame(()=>{scheduled=false;scan();});}
+  new MutationObserver(schedule).observe(document.querySelector('main'),{childList:true,subtree:true,attributes:true,attributeFilter:['class','hidden']});
+  const show=switchTab;switchTab=function(tab){show(tab);scan();};
+  document.addEventListener('click',e=>{const node=e.target.closest('[data-campaign]');if(node)track(node,'click');},true);
+  document.addEventListener('visibilitychange',()=>{if(document.hidden){document.querySelectorAll('[data-campaign]').forEach(node=>clearTimeout(timers.get(node)));flush();}else{document.querySelectorAll('[data-campaign]').forEach(node=>{observer.unobserve(node);observer.observe(node);});scan();}});
+  let refreshing=false;
+  async function refresh(){if(refreshing)return;refreshing=true;try{const client=await window.tripfactAccount.client();const {data,error}=await client.rpc('tripfact_live_campaigns');if(error)throw error;live=new Map(data.map(row=>[row.zone_id,row]));
+    document.querySelectorAll('.ad-placement-group').forEach(old=>{const holder=document.createElement('div');holder.innerHTML=adSlot(old.dataset.zone);old.replaceWith(holder.firstElementChild);});scan();
+  }catch{}finally{refreshing=false;}}
+  setInterval(flush,5000);setInterval(()=>{if(!document.hidden)refresh();},60000);window.tripfactCampaigns={refresh};refresh();
+})();
+
+function renderAdvertiserStatistics(container,call){
+  const fmt=n=>Number(n||0).toLocaleString('ko-KR');let version=0;
+  container.innerHTML='<div class="insight-toolbar"><label>기간 <select data-period><option value="7">최근 7일</option><option value="30" selected>최근 30일</option><option value="90">최근 90일</option></select></label><button type="button" data-refresh>새로고침</button></div><div data-summary></div><div data-chart></div><div class="insight-table" data-table></div><div data-campaigns></div><p class="vendor-help">한국시간 · 페이지 노출은 광고가 게재된 페이지 방문, 화면 노출은 배너가 50% 이상 1초간 보인 횟수입니다. 방문 세션은 30분 기준이며 실제 사람 수와 다릅니다. 클릭률은 페이지 노출 중 클릭한 방문의 비율입니다.</p><p data-status role="status"></p>';
+  async function load(){const current=++version,status=container.querySelector('[data-status]');status.textContent='불러오는 중…';try{
+    const d=await call('tripfact_advertiser_stats',{p_days:Number(container.querySelector('[data-period]').value)});if(current!==version)return;
+    const ctr=d.page_views?Math.min(100,d.clicked_visits/d.page_views*100):0;
+    container.querySelector('[data-summary]').innerHTML='<div class="insight-totals">'+[['페이지 노출',fmt(d.page_views)],['화면 노출',fmt(d.visible_views)],['클릭',fmt(d.clicks)],['방문 세션',fmt(d.sessions)],['클릭률',ctr.toFixed(2)+'%']].map(([label,value])=>'<div>'+label+'<strong>'+value+'</strong></div>').join('')+'</div>';
+    const chart=container.querySelector('[data-chart]');chart.innerHTML='<div class="insight-toolbar"><label>그래프 지표 <select data-metric><option value="page_views">페이지 노출</option><option value="visible_views">화면 노출</option><option value="clicks">클릭</option></select></label></div><div data-plot></div>';
+    function draw(){const key=chart.querySelector('select').value,max=Math.max(1,...d.days.map(r=>Number(r[key]))),w=720,h=200;const points=d.days.map((r,i)=>(20+i*(w-40)/Math.max(1,d.days.length-1))+','+(h-20-Number(r[key])/max*(h-40))).join(' ');
+      chart.querySelector('[data-plot]').innerHTML='<svg viewBox="0 0 '+w+' '+h+'" role="img" aria-label="날짜별 광고 통계 그래프"><line x1="20" y1="180" x2="700" y2="180" stroke="#dce7de"/><polyline points="'+points+'" fill="none" stroke="#21846d" stroke-width="3"/>'+d.days.map((r,i)=>'<circle cx="'+(20+i*(w-40)/Math.max(1,d.days.length-1))+'" cy="'+(h-20-Number(r[key])/max*(h-40))+'" r="3" fill="#21846d"><title>'+escapeHTML(r.day+' · '+fmt(r[key]))+'</title></circle>').join('')+'</svg><div class="ad-chart-axis"><span>'+escapeHTML(d.days[0]?.day||'')+'</span><span>'+escapeHTML(d.days.at(-1)?.day||'')+'</span></div>';}
+    chart.querySelector('select').onchange=draw;draw();
+    container.querySelector('[data-table]').innerHTML='<h3>날짜별</h3><table><thead><tr><th>날짜</th><th>페이지 노출</th><th>화면 노출</th><th>클릭</th></tr></thead><tbody>'+[...d.days].reverse().map(r=>'<tr><td>'+escapeHTML(r.day)+'</td><td>'+fmt(r.page_views)+'</td><td>'+fmt(r.visible_views)+'</td><td>'+fmt(r.clicks)+'</td></tr>').join('')+'</tbody></table>';
+    container.querySelector('[data-campaigns]').innerHTML='<h3>광고별</h3>'+(d.campaigns.length?d.campaigns.map(r=>'<div class="booking-row"><b>'+escapeHTML(r.title)+'</b><span>'+escapeHTML(window.tripfactAds.rateZones.find(z=>z.id===r.zone_id)?.name||r.zone_id)+' · '+escapeHTML(r.starts_on)+' ~ '+escapeHTML(r.ends_on)+'</span><span>페이지 노출 '+fmt(r.page_views)+' · 화면 노출 '+fmt(r.visible_views)+' · 클릭 '+fmt(r.clicks)+'</span></div>').join(''):'집행 중인 광고가 없습니다.');status.textContent='';
+  }catch(error){status.textContent='통계를 불러오지 못했습니다. 업체 승인 상태와 연결 설정을 확인해 주세요.';}}
+  container.querySelector('[data-period]').onchange=load;container.querySelector('[data-refresh]').onclick=load;load();
+}
+
+async function renderAdminCampaigns(container,call,businesses){
+  container.innerHTML='<h3>배너 광고 집행 등록</h3><form class="campaign-form"><label>업체회원<select name="owner" required></select></label><label>광고 자리<select name="zone" required></select></label><label>제목<input name="title" maxlength="80" required></label><label>설명<input name="body" maxlength="160"></label><label>이미지 주소<input name="image" type="url" placeholder="https://…"></label><label>연결 주소<input name="link" type="url" placeholder="https://…" required></label><label>시작일<input name="start" type="date" required></label><label>기간<select name="days"><option value="30">30일</option><option value="90">90일</option></select></label><button class="primary" type="submit">집행 등록</button></form><p class="vendor-help">관리자가 확정한 광고를 등록하는 화면입니다. 이 등록으로 포인트가 자동 차감되지는 않습니다.</p><p data-status role="status"></p><div data-list></div>';
+  const form=container.querySelector('form'),status=container.querySelector('[data-status]');
+  for(const row of businesses){const option=document.createElement('option');option.value=row.user_id;option.textContent=row.business_name;form.elements.owner.append(option);}
+  for(const zone of window.tripfactAds.rateZones){const option=document.createElement('option');option.value=zone.id;option.textContent=zone.name;form.elements.zone.append(option);}
+  form.elements.start.value=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());
+  async function list(){try{const rows=await call('tripfact_admin_campaigns',{}),area=container.querySelector('[data-list]');area.replaceChildren();for(const r of rows){const row=document.createElement('div');row.className='booking-row';const text=document.createElement('span');text.textContent=r.business_name+' · '+r.title+' · '+r.zone_id+' · '+r.starts_on+' ~ '+r.ends_on+(r.enabled?'':' · 중지');row.append(text);if(r.enabled){const stop=document.createElement('button');stop.textContent='중지';stop.className='vendor-link';stop.onclick=async()=>{if(!confirm('이 광고를 중지할까요?'))return;try{await call('tripfact_admin_campaigns',{p_disable:r.id});await list();window.tripfactCampaigns.refresh();}catch(e){status.textContent=e.message;}};row.append(stop);}area.append(row);}if(!rows.length)area.textContent='등록된 배너 광고가 없습니다.';}catch{status.textContent='023 광고 통계 SQL 적용 여부를 확인해 주세요.';}}
+  form.onsubmit=async e=>{e.preventDefault();if(!form.reportValidity())return;const data=new FormData(form),button=form.querySelector('[type=submit]');button.disabled=true;try{await call('tripfact_admin_campaign',{p_owner:data.get('owner'),p_zone:data.get('zone'),p_title:data.get('title'),p_body:data.get('body'),p_image:data.get('image'),p_link:data.get('link'),p_start:data.get('start'),p_days:Number(data.get('days'))});status.textContent='등록했습니다.';await list();window.tripfactCampaigns.refresh();}catch(error){status.textContent=error.message;}finally{button.disabled=false;}};await list();
+}
+
+function renderBusinessWorkspace(container,sections,selected,onSelect){
+  const shell=document.createElement('div');shell.className='business-workspace';const nav=document.createElement('nav');nav.className='rate-pages';nav.setAttribute('aria-label','업체회원 메뉴');
+  const panels=new Map(),buttons=new Map();
+  const stats=document.createElement('section');stats.className='panel';stats.innerHTML='<h2>통계</h2><div id="businessStatistics"></div>';
+  const support=document.createElement('div');support.append(sections[1],sections[2]);
+  const campaigns=document.createElement('div');const own=document.createElement('section');own.className='panel';own.innerHTML='<h2>광고 집행</h2><div id="businessCampaigns"></div>';campaigns.append(own,sections[3]);
+  function select(key){for(const [id,panel] of panels)panel.hidden=id!==key;for(const [id,button] of buttons)button.setAttribute('aria-pressed',String(id===key));onSelect(key);}
+  for(const [key,title,panel] of [['statistics','통계',stats],['support','후원하기',support],['campaigns','광고 집행',campaigns]]){const button=document.createElement('button');button.type='button';button.className='vendor-link';button.textContent=title;button.onclick=()=>select(key);nav.append(button);panels.set(key,panel);buttons.set(key,button);}
+  shell.append(nav,stats,support,campaigns);container.replaceChildren(sections[0],shell);select(panels.has(selected)?selected:'statistics');
+}
+async function renderAdvertiserCampaignList(container,call){
+  container.textContent='불러오는 중…';try{const data=await call('tripfact_advertiser_stats',{p_days:30});const today=new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Seoul'}).format(new Date());container.innerHTML=data.campaigns.length?data.campaigns.map(c=>'<div class="booking-row"><b>'+escapeHTML(c.title)+'</b><span>'+escapeHTML(window.tripfactAds.rateZones.find(z=>z.id===c.zone_id)?.name||c.zone_id)+'</span><span>'+escapeHTML(c.starts_on)+' ~ '+escapeHTML(c.ends_on)+'</span><span>'+(!c.enabled?'중지':c.starts_on>today?'예정':c.ends_on<today?'종료':'진행 중')+'</span></div>').join(''):'등록된 광고가 없습니다.';}catch{container.textContent='광고 집행 내역을 불러오지 못했습니다.';}
 }
 
 (() => {
