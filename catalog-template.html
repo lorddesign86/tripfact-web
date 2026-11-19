@@ -356,6 +356,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .shopping-highlight-list{counter-reset:shopping-rank;list-style:none}.shopping-highlight-list>li{display:flex;align-items:center;gap:9px}.shopping-highlight-list>li:before{counter-increment:shopping-rank;content:counter(shopping-rank);font-size:12px;color:#839184;flex:none;width:14px}.shopping-highlight-list>li>button{min-width:0}
 
 .brand-icon.brand-yuyu-icon-wrap{width:48px;height:54px;background:transparent;border-radius:0;transform:none}.brand-yuyu-icon{width:48px;height:54px;object-fit:contain;display:block}.brand .brand-destination{display:block;font-size:12px;letter-spacing:2px;line-height:1.35;color:#547a69}.brand strong{letter-spacing:-.8px}.hero .brand-yuyu-hero{width:230px;height:calc(100% - 12px);max-height:238px;right:26px;bottom:6px;object-fit:contain}.brand-yuyu-note{width:38px;height:44px;object-fit:contain;display:block}.brand-yuyu-empty{width:68px;height:76px;object-fit:contain;display:inline-block}.brand-site-address{display:block;margin-top:5px;font-size:11px;color:#648175}@media(max-width:600px){.brand-icon.brand-yuyu-icon-wrap,.brand-yuyu-icon{width:37px;height:43px}.brand .brand-destination{font-size:10px;letter-spacing:1.5px}.hero .brand-yuyu-hero{width:124px;height:calc(100% - 10px);max-height:122px;right:8px;bottom:5px}.brand-yuyu-note{width:32px;height:38px}}
+.destination-nav{display:flex;justify-content:center;gap:8px;padding:8px 16px;background:#f2f6ed;border-bottom:1px solid #dfe7da}.destination-nav a{padding:6px 18px;border-radius:20px;text-decoration:none;color:#476256;font-size:14px}.destination-nav a[aria-current="page"]{background:#21846d;color:white;font-weight:700}.destination-nav a:focus-visible{outline:3px solid #e1ac45;outline-offset:2px}
+
 .beauty-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px;margin:18px 0;order:4}
 .beauty-shortcuts button{display:flex;align-items:center;justify-content:center;gap:10px;padding:16px 10px;background:#fffef9;border:1px solid #dce7d9;border-radius:16px;color:#164b46;font-size:16px;min-height:62px}
 .beauty-shortcuts button span{font-size:26px}
@@ -1893,7 +1895,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
           if (nickname.length < 2) throw new Error('닉네임을 2자 이상 입력해 주세요.');
           if (type === 'business' && !businessName) throw new Error('업체명을 입력해 주세요.');
           const result = await checked(client.auth.signUp({...credentials, options:{
-            emailRedirectTo: location.origin + '/', data:{member_type:type, business_name:businessName, display_name:nickname},
+            emailRedirectTo: location.origin + '/다낭', data:{member_type:type, business_name:businessName, display_name:nickname},
           }}));
           if (!result.session) {
             authForm();
@@ -3745,6 +3747,10 @@ async function renderAdminArticles(container,call,generate,readArticle){
     const name=brand.querySelector('strong');if(name)name.textContent=siteName;
     const subtitle=brand.querySelector('small');if(subtitle){subtitle.textContent=destination;subtitle.classList.add('brand-destination');}
   }
+  if(brand)brand.href='/다낭';
+  const cityNav=document.createElement('nav');cityNav.className='destination-nav';cityNav.setAttribute('aria-label','여행지 선택');
+  for(const city of ['다낭','나트랑','푸꾸옥']){const link=document.createElement('a');link.href='/'+city;link.textContent=city;if(city===destination)link.setAttribute('aria-current','page');cityNav.append(link);}
+  document.querySelector('.top').after(cityNav);
   const oldHero=document.querySelector('.hero .hero-art');
   if(oldHero){const image=picture('hero-art brand-yuyu-hero');image.alt='베트남을 여행하는 유유';oldHero.replaceWith(image);}
   const note=document.querySelector('.travel-note');

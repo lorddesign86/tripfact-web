@@ -73,14 +73,14 @@ def render_page(title, description, canonical, body, image=None, structured=None
 
 
 def home_metadata(document):
-    title = '다낭 트립팩트 | 환전 평균·쇼핑시세·날씨·여행 커뮤니티'
+    title = '지금 여행중 · 다낭 | 환전 평균·쇼핑시세·날씨·여행 커뮤니티'
     description = '다낭 여행자를 위한 최근 환전 평균과 계산기, 쇼핑 참고가격, 지역별 날씨, 현지 커뮤니티와 핫딜을 확인하세요.'
     document = re.sub(r'<title>.*?</title>', '<title>' + title + '</title>', document, count=1, flags=re.S)
-    tags = '<meta name="description" content="' + description + '"><link rel="canonical" href="' + escape(public_origin() + '/') + '">'
-    tags += '<meta property="og:title" content="' + title + '"><meta property="og:description" content="' + description + '"><meta property="og:url" content="' + escape(public_origin() + '/') + '">'
+    tags = '<meta name="description" content="' + description + '"><link rel="canonical" href="' + escape(public_origin() + '/다낭') + '">'
+    tags += '<meta property="og:title" content="' + title + '"><meta property="og:description" content="' + description + '"><meta property="og:url" content="' + escape(public_origin() + '/다낭') + '">'
     tags += '<link rel="alternate" type="application/rss+xml" title="다낭 여행정보" href="/rss.xml">'
     tags += '<script type="application/ld+json">' + json.dumps({'@context': 'https://schema.org', '@type': 'WebSite',
-        'name': '다낭 트립팩트', 'url': public_origin() + '/', 'inLanguage': 'ko-KR'}, ensure_ascii=False).replace('<', '\\u003c') + '</script>'
+        'name': '지금 여행중 · 다낭', 'url': public_origin() + '/다낭', 'inLanguage': 'ko-KR'}, ensure_ascii=False).replace('<', '\\u003c') + '</script>'
     return document.replace('</head>', tags + '</head>', 1)
 
 
