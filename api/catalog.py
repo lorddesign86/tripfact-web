@@ -40,7 +40,7 @@ class handler(BaseHTTPRequestHandler):
             client = sheet_client()
             sheet_status = 'read-failed'
             try:
-                snapshot = read_workbook(client, include_places=False)
+                snapshot = read_workbook(client, include_places=True)
                 source = 'sheets'
             except Exception:
                 # Keep live rates available even if an unrelated catalog tab fails.
@@ -57,7 +57,7 @@ class handler(BaseHTTPRequestHandler):
                     pass
                 source = 'sheets-rates'
             snapshot['source_mode'] = 'connected' if source == 'sheets' else 'snapshot'
-            snapshot.pop('places', None)
+            snapshot['places'] = [p for p in snapshot.get('places', []) if p.get('category') in ('마사지', '네일', '이발관')]
             html = with_data(html, snapshot)
             sheet_status = 'connected' if source == 'sheets' else 'rates-only'
             cache = 'public, s-maxage=300, stale-while-revalidate=300'
