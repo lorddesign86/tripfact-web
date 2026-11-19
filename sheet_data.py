@@ -8,6 +8,7 @@ from statistics import mean
 from urllib.parse import urlparse
 from gspread.exceptions import WorksheetNotFound
 from business_overrides import apply_direct_businesses
+from food_details import build_food_info
 
 KST = timezone(timedelta(hours=9))
 
@@ -128,12 +129,12 @@ def build_snapshot(tables):
     seen = set()
     for tab, category in CATEGORIES.items():
         for row in tables[tab]:
-            if tab in ('맛집','카페') and row.get('베스트100 후보' if tab=='맛집' else '베스트50 후보')!='선정':
+            if tab in ('맛집','카페') and str(row.get('베스트100 후보' if tab=='맛집' else '베스트50 후보','')).strip()!='선정':
                 continue
             source_id, name = row.get('업체ID'), row.get('업체명')
             if not source_id or not name or (tab, source_id) in seen:
                 continue
-            if row.get('사이트 노출 대상') in ('제외','비공개','숨김'):
+            if str(row.get('사이트 노출 대상','')).strip() in ('제외','비공개','숨김'):
                 continue
             selected=row.get('선택 업종·자동분류','').strip()
             if selected and category not in selected and tab not in selected:
@@ -177,6 +178,7 @@ def build_snapshot(tables):
                 'reviewHighlight': next((item['summary'] for item in reviews if item['direction'] == '긍정'), ''),
                 'reviewCaution': next((item['summary'] for item in reviews if item['direction'] == '주의'), ''),
                 'badge': category, 'date': row.get('구글 확인일', '')[:10],
+                **(build_food_info(row) if tab in ('맛집','카페') else {}),
                 'foodFeatures': {key:str(row.get(key,'')).strip() for key in ('에어컨·좌석 구분','커피·디저트 강점','뷰·사진 포인트','좌석·가족·작업 적합성','혼잡·방문 전 확인') if row.get(key)},
             })
 
