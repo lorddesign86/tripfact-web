@@ -290,11 +290,25 @@ def read_workbook(client, include_places=True, city='danang'):
     if any(not mapping.get(key) for key in required):
         raise ValueError('Missing regional sheet')
     present=[(key,title) for key,title in mapping.items() if title]
+    # Respect the operator's curated visible rows, including Sheets filter views.
+    food_titles=[title for key,title in present if key in ('맛집','카페')]
+    hidden_rows={title:set() for title in food_titles}
+    if food_titles:
+        metadata=book.fetch_sheet_metadata(params={
+            'includeGridData':'true',
+            'ranges':["'"+title.replace("'","''")+"'!A:A" for title in food_titles],
+            'fields':'sheets(properties(title),data(startRow,rowMetadata(hiddenByUser,hiddenByFilter)))'})
+        for sheet in metadata.get('sheets',[]):
+            title=sheet['properties']['title']
+            for block in sheet.get('data',[]):
+                for index,row in enumerate(block.get('rowMetadata',[]),block.get('startRow',0)):
+                    if row.get('hiddenByUser') or row.get('hiddenByFilter'):
+                        hidden_rows.setdefault(title,set()).add(index)
     batches=book.values_batch_get(["'"+title.replace("'","''")+"'!A1:CH" for _,title in present])['valueRanges']
     tables={key:[] for key in [*CATEGORIES,'가격메뉴','업체리뷰 근거',*mapping]}
-    for (key,_),batch in zip(present,batches,strict=True):
+    for (key,title),batch in zip(present,batches,strict=True):
         headers,*rows=batch.get('values') or [[]]
-        tables[key]=[dict(zip(headers,row)) for row in rows]
+        tables[key]=[dict(zip(headers,row)) for index,row in enumerate(rows,1) if index not in hidden_rows.get(title,set())]
     # The common catalogue describes products, never another city's prices.
     if city!='danang':
         tables['쇼핑목록']=[{k:v for k,v in row.items() if not k.startswith('참고')} for row in tables['쇼핑목록']]
