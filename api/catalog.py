@@ -42,7 +42,7 @@ def render_catalog(city,live=True):
     if snapshot.get('city')!=city:raise ValueError('Regional fallback mismatch')
     source='snapshot';status='not-configured'
     if live and os.environ.get('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON'):
-        try:snapshot=read_workbook(sheet_client(),include_places=city=='danang',city=city);source='sheets';status='connected'
+        try:snapshot=read_workbook(sheet_client(),include_places=True,city=city);source='sheets';status='connected'
         except Exception as error:
             status='read-failed';print('Regional sheet read failed: '+city+' '+type(error).__name__,flush=True)
     snapshot['source_mode']='connected' if source=='sheets' else 'snapshot'

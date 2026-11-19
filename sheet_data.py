@@ -132,10 +132,8 @@ def build_snapshot(tables):
                 continue
             if row.get('사이트 노출 대상') in ('제외','비공개','숨김'):
                 continue
-            if tab == '이발소' and (
-                row.get('한국식 풀케어 확인') != '귀청소·마사지·손발톱 관리 확인'
-                or row.get('한국인 운영 확인') != '확인 완료'
-            ):
+            selected=row.get('선택 업종·자동분류','').strip()
+            if selected and category not in selected and tab not in selected:
                 continue
             seen.add((tab, source_id))
             entries = menus[(tab, source_id)]
@@ -256,14 +254,14 @@ def representative_menu(place):
     return min(preferred or prices,key=lambda m:m['low'])
 
 def place_is_ready(place):
-    prices=verified_menus(place)
-    booking=any(safe_url(place.get(key,'')) for key in ('kakao','reservation'))
-    features=len(str(place.get('services','')).strip())>=15 or bool(place.get('reviewEvidence')) or any(len(str(menu.get('conditions','')).strip())>=15 for menu in prices)
-    return bool(place.get('name') and place.get('address') and safe_url(place.get('map','')) and representative_menu(place) and booking and features)
+    return bool(str(place.get('name','')).strip() and (safe_url(place.get('map','')) or str(place.get('address','')).strip()))
 
 def publish_place(place):
     result={**place,'menus':verified_menus(place)}
     menu=representative_menu(place)
+    if not menu:
+        result.update(priceValue=None,price='가격 문의',priceBasis='')
+        return result
     result['priceValue']=menu['low']
     result['price']=(f"{menu['low']:,}~{menu['high']:,}동"if menu['low']!=menu['high']else f"{menu['low']:,}동")
     result['priceBasis']=menu.get('name','')+(' · '+str(menu['minutes'])+'분'if menu.get('minutes')else '')
@@ -285,8 +283,9 @@ def read_workbook(client, include_places=True, city='danang'):
       '환전수집':choose('환전수집' if city=='danang' else name+'_환전수집'),
       '환전최근확인':choose('환전최근확인' if city=='danang' else name+'_최근확인'),
       '지역참고가격':choose(name+' 쇼핑참고가격')}
-    if include_places and city=='danang':
-        mapping.update({tab:choose(tab) for tab in [*CATEGORIES,'가격메뉴','업체리뷰 근거']})
+    if include_places:
+        for tab in [*CATEGORIES,'가격메뉴','업체리뷰 근거']:
+            mapping[tab]=choose(name+' '+tab,name+'_'+tab,*((tab,) if city=='danang' else ()))
     required=['쇼핑목록','쇼핑웹요약','웹요약']
     if any(not mapping.get(key) for key in required):
         raise ValueError('Missing regional sheet')
