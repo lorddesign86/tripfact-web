@@ -7,6 +7,7 @@ from datetime import datetime, timedelta, timezone
 from statistics import mean
 from urllib.parse import urlparse
 from gspread.exceptions import WorksheetNotFound
+from business_overrides import apply_direct_businesses
 
 KST = timezone(timedelta(hours=9))
 
@@ -127,6 +128,8 @@ def build_snapshot(tables):
     seen = set()
     for tab, category in CATEGORIES.items():
         for row in tables[tab]:
+            if tab in ('맛집','카페') and row.get('베스트100 후보' if tab=='맛집' else '베스트50 후보')!='선정':
+                continue
             source_id, name = row.get('업체ID'), row.get('업체명')
             if not source_id or not name or (tab, source_id) in seen:
                 continue
@@ -151,6 +154,7 @@ def build_snapshot(tables):
             region = next((r for r in ('한시장', '미케비치', '호이안') if r in area), '')
             places.append({
                 'id': 'sheet-' + hashlib.sha256((tab + ':' + source_id).encode()).hexdigest()[:20],
+                'sourceId': source_id,
                 'name': name, 'short': name, 'category': category,
                 'type': 'spa' if tab in ('마사지', '네일', '이발소') else 'dining',
                 'loc': area, 'region': region, 'address': row.get('주소', ''),
@@ -165,13 +169,19 @@ def build_snapshot(tables):
                 'hours': row.get('영업시간', ''), 'phone': row.get('전화', ''),
                 'website': safe_url(row.get('공식 홈페이지', '')),
                 'services': row.get('시설·서비스', ''),
+                'cuisine': str(row.get('음식국가·종류','')).strip(),
+                'menuSummary': str(row.get('코스·메뉴','')).strip(),
                 'kakao': safe_url(row.get('카카오톡 예약 URL', '')),
                 'reservation': safe_url(row.get('예약 URL', '')),
                 'reviewEvidence': reviews,
                 'reviewHighlight': next((item['summary'] for item in reviews if item['direction'] == '긍정'), ''),
                 'reviewCaution': next((item['summary'] for item in reviews if item['direction'] == '주의'), ''),
                 'badge': category, 'date': row.get('구글 확인일', '')[:10],
+                'foodFeatures': {key:str(row.get(key,'')).strip() for key in ('에어컨·좌석 구분','커피·디저트 강점','뷰·사진 포인트','좌석·가족·작업 적합성','혼잡·방문 전 확인') if row.get(key)},
             })
+
+    if '업체정보 직접보완' in tables:
+        places=apply_direct_businesses(places,tables['업체정보 직접보완'])
 
     products = []
     for row in tables['쇼핑목록']:
@@ -239,6 +249,8 @@ CITY_NAMES = {'danang':'다낭', 'nhatrang':'나트랑', 'phuquoc':'푸꾸옥'}
 EXCHANGE_NAMES = {'danang':['김옌','김가','손하','공항'], 'nhatrang':['김청','김빈','나트랑공항'], 'phuquoc':['금은방','킹콩마트 옆','푸꾸옥공항','GOOD&GOOD','킹콩마트 앞']}
 
 def verified_menus(place):
+    if place.get('manualInput'):
+        return [m for m in place.get('menus',[]) if m.get('directInput') and isinstance(m.get('low'),(int,float)) and m['low']>0]
     today=datetime.now(KST).date().isoformat()
     oldest=(datetime.now(KST).date()-timedelta(days=180)).isoformat()
     return [menu for menu in place.get('menus',[]) if isinstance(menu.get('low'),(int,float)) and menu['low']>0 and menu.get('high',0)>=menu['low'] and safe_url(menu.get('source','')) and re.fullmatch(r'20\d{2}-\d{2}-\d{2}',menu.get('date','')) and oldest<=menu['date']<=today]
@@ -249,6 +261,8 @@ def representative_menu(place):
         return None
     if place.get('category')=='네일':
         preferred=[m for m in prices if '젤' in m.get('name','') and ('매니큐어' in m.get('name','') or '손' in m.get('name',''))]
+    elif place.get('category')=='이발관':
+        preferred=[m for m in prices if m.get('service')=='대표코스1']
     else:
         preferred=[m for m in prices if place.get('category')=='마사지' and m.get('minutes')==90 and m.get('service')=='아로마']
     return min(preferred or prices,key=lambda m:m['low'])
@@ -260,11 +274,11 @@ def publish_place(place):
     result={**place,'menus':verified_menus(place)}
     menu=representative_menu(place)
     if not menu:
-        result.update(priceValue=None,price='가격 문의',priceBasis='')
+        result.update(priceValue=None,price='가격 확인 필요',priceBasis='')
         return result
     result['priceValue']=menu['low']
     result['price']=(f"{menu['low']:,}~{menu['high']:,}동"if menu['low']!=menu['high']else f"{menu['low']:,}동")
-    result['priceBasis']=menu.get('name','')+(' · '+str(menu['minutes'])+'분'if menu.get('minutes')else '')
+    result['priceBasis']=menu.get('name','')+(' · '+str(menu['minutes'])+'분'if menu.get('minutes') and str(menu['minutes'])+'분' not in menu.get('name','') else '')
     return result
 
 def read_workbook(client, include_places=True, city='danang'):
@@ -286,6 +300,11 @@ def read_workbook(client, include_places=True, city='danang'):
     if include_places:
         for tab in [*CATEGORIES,'가격메뉴','업체리뷰 근거']:
             mapping[tab]=choose(name+' '+tab,name+'_'+tab,*((tab,) if city=='danang' else ()))
+        direct=choose(name+' 업체정보 직접보완',name+'_업체정보 직접보완',*(('업체정보 직접보완',) if city=='danang' else ()))
+        if direct:
+            mapping['업체정보 직접보완']=direct
+        elif city=='danang':
+            raise ValueError('Missing authoritative business input sheet')
     required=['쇼핑목록','쇼핑웹요약','웹요약']
     if any(not mapping.get(key) for key in required):
         raise ValueError('Missing regional sheet')
@@ -308,6 +327,9 @@ def read_workbook(client, include_places=True, city='danang'):
     tables={key:[] for key in [*CATEGORIES,'가격메뉴','업체리뷰 근거',*mapping]}
     for (key,title),batch in zip(present,batches,strict=True):
         headers,*rows=batch.get('values') or [[]]
+        headers=[str(header).strip() for header in headers]
+        if key=='업체정보 직접보완' and not {'업체ID','업체명·지점','업종 선택','보강 대상'}.issubset(headers):
+            raise ValueError('Missing authoritative business column names')
         tables[key]=[dict(zip(headers,row)) for index,row in enumerate(rows,1) if index not in hidden_rows.get(title,set())]
     # The common catalogue describes products, never another city's prices.
     if city!='danang':
