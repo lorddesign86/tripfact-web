@@ -32,6 +32,18 @@ def card_lines(values):
    if item not in lines and not any(item in existing or existing in item for existing in lines):lines.append(item)
  return lines[:2]
 
+def ranked_menus(menu,counts):
+ # Explicit menu entries plus recognizable dishes in the wider keyword table.
+ nonmenu=re.compile(r'staff|service|owner|customer|view|seat|music|atmosphere|revisit|crowd|price|menu|restaurant|coffee shop|taste|friendly|delicious|직원|친절|사장|주인|고객|한국인|전망|좌석|음악|분위기|재방문|가격|서비스|메뉴',re.I)
+ dish=re.compile(r'반쎄오|반세오|분짜|반미|모닝글로리|쌀국수|분보|까오러우|화이트로즈|완탕|볶음밥|스프링롤|스프링 롤|춘권|죽|국수|해산물|새우|가리비|굴|랍스터|로브스터|쭈꾸미|문어|조개|피자|파스타|스테이크|초밥|사시미|커피|라떼|카푸치노|아메리카노|에스프레소|케이크|크로와상|크루아상|토스트|샌드위치|빙수|스무디|주스|와플|푸딩|rice|noodle|spring roll|porridge|banh|bánh|pho|phở|bun cha|bún chả|cao lau|cao lầu|mi quang|mì quảng|wonton|pancake|pizza|pasta|steak|sushi|sashimi|shrimp|prawn|lobster|scallop|clam|squid|octopus|curry|madras|tikka|naan|coffee|latte|cappuccino|espresso|cake|croissant|toast|sandwich|smoothie|juice|waffle|pudding',re.I)
+ chosen={}
+ for label,count in mention_pairs(menu):
+  if not nonmenu.search(label):chosen[label]=max(chosen.get(label,0),count)
+ for label,count in mention_pairs(counts):
+  if label in menu or dish.search(label):
+   if not nonmenu.search(label):chosen[label]=max(chosen.get(label,0),count)
+ return [{'name':label,'mentions':count}for label,count in sorted(chosen.items(),key=lambda x:-x[1])]
+
 def build_food_info(row):
  detail={key:str(row.get(key,'')).strip()for key in FIELDS if str(row.get(key,'')).strip()}
  menu=detail.get('대표메뉴·구글 주요언급')or str(row.get('코스·메뉴','')).strip()
@@ -49,4 +61,4 @@ def build_food_info(row):
    if url and url not in urls:urls.append(url)
  return {'menuSummary':menu,'menuDisplay':display,'services':choice,'choiceDisplay':feature,'foodDetail':detail,'foodCardLines':lines,
          'mentionDisplay':'\n'.join(f'구글 후기에서 {label} {count:,}건 언급'for label,count in mention_pairs(counts)),
-         'featureUrls':urls}
+         'featureUrls':urls,'menuRanking':ranked_menus(menu,counts)}

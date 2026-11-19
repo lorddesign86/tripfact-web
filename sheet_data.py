@@ -274,6 +274,12 @@ def place_is_ready(place):
 
 def publish_place(place):
     result={**place,'menus':verified_menus(place)}
+    image=place.get('image','')
+    if urlparse(image).hostname and urlparse(image).hostname.endswith('.googleusercontent.com'):
+        original=place.get('imageOriginal',image)
+        result['imageOriginal']=original
+        result['image']=re.sub(r'=w\d+-h\d+[^?]*$', '=w1200-h900-k-no',original)
+        result['imageThumb']=re.sub(r'=w\d+-h\d+[^?]*$', '=w360-h300-k-no',original)
     menu=representative_menu(place)
     if not menu:
         result.update(priceValue=None,price='가격 확인 필요',priceBasis='')
