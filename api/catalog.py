@@ -1,77 +1,78 @@
-"""Serve Danang pages from the private workbook with a last-build fallback."""
+"""Shared city layout with strictly regional sheet data and saved fallbacks."""
 import json
+import base64
+import re
 import os
 from http.server import BaseHTTPRequestHandler
 from pathlib import Path
-
+from urllib.parse import parse_qs, urlparse, unquote
 import gspread
 from google.oauth2.service_account import Credentials
-from sheet_data import WORKBOOK, read_exchange_locations, read_rates, read_workbook
+from sheet_data import read_workbook, CITY_NAMES
 from article_service import home_metadata
 
-TEMPLATE = Path(__file__).resolve().parents[1] / 'catalog-template.html'
-START = '/* SHEET_DATA_START */'
-END = '/* SHEET_DATA_END */'
-
+ROOT=Path(__file__).resolve().parents[1]
+TEMPLATE=ROOT/'catalog-template.html'
+START='/* SHEET_DATA_START */'
+END='/* SHEET_DATA_END */'
 
 def sheet_client():
-    account = json.loads(os.environ['GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON'])
-    credentials = Credentials.from_service_account_info(
-        account, scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
-    client = gspread.authorize(credentials)
-    client.set_timeout(8)
+    account=json.loads(os.environ['GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON'])
+    credentials=Credentials.from_service_account_info(account,scopes=['https://www.googleapis.com/auth/spreadsheets.readonly'])
+    client=gspread.authorize(credentials);client.set_timeout(8)
     return client
 
+def with_data(html,snapshot):
+    prefix,payload=html.split(START,1)
+    _,suffix=payload.split(END,1)
+    return prefix+START+json.dumps(snapshot,ensure_ascii=False).replace('<','\\u003c')+END+suffix
 
-def with_data(html, snapshot):
-    prefix, payload = html.split(START, 1)
-    _, suffix = payload.split(END, 1)
-    encoded = json.dumps(snapshot, ensure_ascii=False).replace('<', '\\u003c')
-    return prefix + START + encoded + END + suffix
+def resolve_city(path):
+    query=parse_qs(urlparse(path).query)
+    value=unquote(query.get('destination',query.get('city',['']))[0]).strip('/')
+    if not value:
+        value=unquote(urlparse(path).path).strip('/')
+    if value in ('','api/catalog','api/destinations'):return 'danang'
+    return next((code for code,name in CITY_NAMES.items() if value in (code,name)),None)
 
+def render_catalog(city,live=True):
+    html=TEMPLATE.read_text(encoding='utf-8')
+    saved=ROOT/'city-data'/(city+'.json')
+    snapshot=json.loads(saved.read_text(encoding='utf-8')) if saved.exists() else json.loads(html.split(START,1)[1].split(END,1)[0])
+    if snapshot.get('city')!=city:raise ValueError('Regional fallback mismatch')
+    source='snapshot';status='not-configured'
+    if live and os.environ.get('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON'):
+        try:snapshot=read_workbook(sheet_client(),include_places=city=='danang',city=city);source='sheets';status='connected'
+        except Exception as error:
+            status='read-failed';print('Regional sheet read failed: '+city+' '+type(error).__name__,flush=True)
+    snapshot['source_mode']='connected' if source=='sheets' else 'snapshot'
+    snapshot['places']=[p for p in snapshot.get('places',[]) if p.get('category') in ('마사지','네일','이발관')]
+    html=with_data(html,snapshot)
+    qr=ROOT/'assets/branding'/(city+'-qr.png')
+    if qr.exists():
+        value='data:image/png;base64,'+base64.b64encode(qr.read_bytes()).decode('ascii')
+        html=re.sub(r'const qrSource = "data:image/png;base64,[^"]*";' ,lambda _: 'const qrSource = '+json.dumps(value)+';',html,count=1)
+    config={'code':city,'name':CITY_NAMES[city],'path':'/'+CITY_NAMES[city]}
+    html=html.replace('</head>','<script>window.tripfactCity='+json.dumps(config,ensure_ascii=False).replace('<','\\u003c')+';</script></head>',1)
+    if city!='danang':
+        for key in ('tripfact-favs','tripfact-shopping-favs','tripfact-shopping-quantities'):
+            html=html.replace("'"+key+"'","'"+key+'-'+city+"'")
+    html=home_metadata(html)
+    if city!='danang':html=html.replace('다낭 여행자를',CITY_NAMES[city]+' 여행자를').replace('지금 여행중 · 다낭','지금 여행중 · '+CITY_NAMES[city]).replace('/다낭"','/'+CITY_NAMES[city]+'"')
+    return html,source,status
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
-        html = TEMPLATE.read_text(encoding='utf-8')
-        source = 'snapshot'
-        sheet_status = 'not-configured'
-        cache = 'no-store'
-        try:
-            client = sheet_client()
-            sheet_status = 'read-failed'
-            try:
-                snapshot = read_workbook(client, include_places=True)
-                source = 'sheets'
-            except Exception:
-                # Keep live rates available even if an unrelated catalog tab fails.
-                snapshot = json.loads(html.split(START, 1)[1].split(END, 1)[0])
-                book = client.open_by_key(WORKBOOK)
-                rates_sheet = book.worksheet('웹요약')
-                rows = rates_sheet.get_all_records(numericise_ignore=['all'])
-                snapshot['rates'] = read_rates(rows)
-                snapshot['rate_status'] = next((row.get('collection_status') for row in rows), '')
-                try:
-                    records = book.worksheet('환전수집').get_all_records(numericise_ignore=['all'])
-                    snapshot['exchange_locations'] = read_exchange_locations(records)
-                except gspread.exceptions.GSpreadException:
-                    pass
-                source = 'sheets-rates'
-            snapshot['source_mode'] = 'connected' if source == 'sheets' else 'snapshot'
-            snapshot['places'] = [p for p in snapshot.get('places', []) if p.get('category') in ('마사지', '네일', '이발관')]
-            html = with_data(html, snapshot)
-            sheet_status = 'connected' if source == 'sheets' else 'rates-only'
-            cache = 'public, s-maxage=300, stale-while-revalidate=300'
-        except Exception as error:
-            # Authentication and upstream network failures should not hide the saved list.
-            if os.environ.get('GOOGLE_SHEETS_SERVICE_ACCOUNT_JSON'):
-                sheet_status = 'read-failed'
-                print(f'Sheet connection failed: {type(error).__name__}', flush=True)
-        payload = home_metadata(html).encode('utf-8')
+        city=resolve_city(self.path)
+        if city is None:
+            self.send_response(404);self.send_header('Content-Type','text/plain; charset=utf-8');self.end_headers();self.wfile.write('페이지를 찾을 수 없습니다'.encode());return
+        html,source,status=render_catalog(city)
+        payload=html.encode('utf-8')
         self.send_response(200)
-        self.send_header('Content-Type', 'text/html; charset=utf-8')
-        self.send_header('Cache-Control', cache)
-        self.send_header('X-Tripfact-Data-Source', source)
-        self.send_header('X-Tripfact-Sheet-Status', sheet_status)
-        self.send_header('Content-Length', str(len(payload)))
-        self.end_headers()
-        self.wfile.write(payload)
+        self.send_header('Content-Type','text/html; charset=utf-8')
+        self.send_header('Cache-Control','public, s-maxage=300, stale-while-revalidate=300')
+        self.send_header('X-Tripfact-City',city)
+        self.send_header('X-Tripfact-Data-Source',source)
+        self.send_header('X-Tripfact-Sheet-Status',status)
+        self.send_header('Content-Length',str(len(payload)))
+        self.end_headers();self.wfile.write(payload)

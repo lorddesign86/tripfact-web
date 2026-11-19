@@ -2,19 +2,7 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/api/destinations"
-    },
-    {
-      "source": "/다낭",
       "destination": "/api/catalog"
-    },
-    {
-      "source": "/나트랑",
-      "destination": "/api/destinations?city=nhatrang"
-    },
-    {
-      "source": "/푸꾸옥",
-      "destination": "/api/destinations?city=phuquoc"
     },
     {
       "source": "/information",
@@ -35,6 +23,10 @@
     {
       "source": "/robots.txt",
       "destination": "/api/articles?view=robots"
+    },
+    {
+      "source": "/:destination",
+      "destination": "/api/catalog?destination=:destination"
     }
   ],
   "crons": [
@@ -68,13 +60,10 @@
   ],
   "functions": {
     "api/catalog.py": {
-      "includeFiles": "catalog-template.html"
+      "includeFiles": "{catalog-template.html,city-data/*.json,assets/branding/*-qr.png}"
     },
     "api/article-generate.py": {
       "maxDuration": 300
-    },
-    "api/destinations.py": {
-      "includeFiles": "assets/mascots/yuyu-vietnam-site.webp"
     }
   }
 }

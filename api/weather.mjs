@@ -1,12 +1,16 @@
-const locations = {
+const cityLocations = {danang: {
   center: [16.0678, 108.2208],
   beach: [16.0536, 108.2479],
   bana: [15.9953, 107.9967],
   hoian: [15.877, 108.328],
-};
+},nhatrang:{center:[12.2388,109.1967]},phuquoc:{center:[10.2167,103.9667]}};
 
 export async function GET(request) {
-  const area = new URL(request.url).searchParams.get('area') || 'center';
+  const query=new URL(request.url).searchParams;
+  const city=query.get('city')||'danang';
+  if(!Object.hasOwn(cityLocations,city))return Response.json({error:'unknown_city'},{status:400});
+  const locations=cityLocations[city];
+  const area = query.get('area') || 'center';
   if (!Object.hasOwn(locations, area)) return Response.json({error:'unknown_area'}, {status:400});
   const key = process.env.GOOGLE_WEATHER_API_KEY?.trim();
   if (!key) return Response.json({error:'not_configured'}, {status:503});
@@ -40,6 +44,8 @@ export async function GET(request) {
         min: day.minTemperature?.degrees ?? null,
         rain: day.daytimeForecast?.precipitation?.probability?.percent ?? null,
         condition: day.daytimeForecast?.weatherCondition?.description?.text || '',
+        conditionType: day.daytimeForecast?.weatherCondition?.type || '',
+        iconBaseUri: day.daytimeForecast?.weatherCondition?.iconBaseUri || '',
       };
     });
     if (!days.length) {

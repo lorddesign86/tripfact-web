@@ -36,7 +36,7 @@ def read_rates(rows):
     for row in rows:
         if row.get('currency') not in ('USD', 'KRW') or not row.get('category'):
             continue
-        value = row.get('mean_vnd', '').replace(',', '')
+        value = str(row.get('mean_vnd', '')).replace(',', '')
         rates.append(dict(category=row['category'], currency=row['currency'],
             nominal=amount(row.get('nominal', '')), posts=amount(row.get('posts', '')) or 0,
             mean_vnd=float(value) if value else None,
@@ -237,24 +237,60 @@ def build_snapshot(tables):
         exchange_locations=locations)
 
 
-def read_workbook(client, include_places=True):
-    tabs = [*CATEGORIES, '가격메뉴'] if include_places else []
-    tabs += ['쇼핑목록', '쇼핑웹요약', '웹요약', '쇼핑수집현황', '환전수집']
-    book = client.open_by_key(WORKBOOK)
-    batches = book.values_batch_get([f"'{tab}'!A1:AZ" for tab in tabs])['valueRanges']
-    tables = {name: [] for name in [*CATEGORIES, '가격메뉴']}
-    for tab, batch in zip(tabs, batches, strict=True):
-        headers, *rows = batch.get('values') or [[]]
-        tables[tab] = [dict(zip(headers, row)) for row in rows]
-    reviews = []
-    if include_places:
-        try:
-            reviews = book.worksheet('업체리뷰 근거').get_all_records()
-        except WorksheetNotFound:
-            pass
-    tables['업체리뷰 근거'] = reviews
-    try:
-        tables['환전최근확인'] = book.worksheet('환전최근확인').get_all_records(numericise_ignore=['all'])
-    except WorksheetNotFound:
-        tables['환전최근확인'] = []
-    return build_snapshot(tables)
+CITY_NAMES = {'danang':'다낭', 'nhatrang':'나트랑', 'phuquoc':'푸꾸옥'}
+EXCHANGE_NAMES = {'danang':['김옌','김가','손하','공항'], 'nhatrang':['김청','김빈','나트랑공항'], 'phuquoc':['금은방','킹콩마트 옆','푸꾸옥공항','GOOD&GOOD','킹콩마트 앞']}
+
+def read_workbook(client, include_places=True, city='danang'):
+    if city not in CITY_NAMES:
+        raise ValueError('Unknown city')
+    name=CITY_NAMES[city]
+    book=client.open_by_key(WORKBOOK)
+    available={sheet.title for sheet in book.worksheets()}
+    def choose(*names):
+        return next((title for title in names if title in available),None)
+    mapping={
+      '쇼핑목록':choose('공통 쇼핑목록','쇼핑목록'),
+      '쇼핑웹요약':choose(name+' 쇼핑웹요약',*(('쇼핑웹요약',) if city=='danang' else ())),
+      '쇼핑수집현황':choose(name+' 쇼핑수집현황',*(('쇼핑수집현황',) if city=='danang' else ())),
+      '웹요약':choose('웹요약' if city=='danang' else name+'_웹요약'),
+      '환전수집':choose('환전수집' if city=='danang' else name+'_환전수집'),
+      '환전최근확인':choose('환전최근확인' if city=='danang' else name+'_최근확인'),
+      '지역참고가격':choose(name+' 쇼핑참고가격')}
+    if include_places and city=='danang':
+        mapping.update({tab:choose(tab) for tab in [*CATEGORIES,'가격메뉴','업체리뷰 근거']})
+    required=['쇼핑목록','쇼핑웹요약','웹요약']
+    if any(not mapping.get(key) for key in required):
+        raise ValueError('Missing regional sheet')
+    present=[(key,title) for key,title in mapping.items() if title]
+    batches=book.values_batch_get(["'"+title.replace("'","''")+"'!A1:CH" for _,title in present])['valueRanges']
+    tables={key:[] for key in [*CATEGORIES,'가격메뉴','업체리뷰 근거',*mapping]}
+    for (key,_),batch in zip(present,batches,strict=True):
+        headers,*rows=batch.get('values') or [[]]
+        tables[key]=[dict(zip(headers,row)) for row in rows]
+    # The common catalogue describes products, never another city's prices.
+    if city!='danang':
+        tables['쇼핑목록']=[{k:v for k,v in row.items() if not k.startswith('참고')} for row in tables['쇼핑목록']]
+    references={row.get('품목ID'):row for row in tables['지역참고가격'] if row.get('통화')=='VND' and safe_url(row.get('출처',''))}
+    for row in tables['쇼핑웹요약']:
+        if row.get('표시통화')=='VND' and safe_url(row.get('표시가격 출처','')) and row.get('품목ID') not in references:
+            references[row['품목ID']]={'참고가격':row.get('표시가격',''),'통화':'VND','기준일':row.get('표시가격 기준일',''),'제품·단위':row.get('표시가격 단위·제품',''),'출처':row['표시가격 출처']}
+    for row in tables['쇼핑목록']:
+        ref=references.get(row.get('품목ID'))
+        if ref:
+            row.update({'참고가격(통계 제외)':ref.get('참고가격',''),'참고 통화(통계 제외)':'VND','참고 날짜(통계 제외)':ref.get('기준일',''),'참고 제품·단위(통계 제외)':ref.get('제품·단위',''),'참고 출처(통계 제외)':ref['출처']})
+    result=build_snapshot(tables)
+    result['city']=city
+    result['exchange_names']=EXCHANGE_NAMES[city]
+    if city!='danang':
+        result['exchange_locations']=[]
+        for label in EXCHANGE_NAMES[city]:
+            for currency in ('KRW','USD'):
+                summary=next((r for r in result['rates'] if r['category']==label and r['currency']==currency and r['posts'] and r['mean_vnd']),None)
+                if summary:
+                    result['exchange_locations'].append({**summary,'location':label})
+                    continue
+                candidates=[r for r in tables['환전최근확인'] if r.get('환전장소')==label and r.get('기준금액')==('100달러' if currency=='USD' else '5만원') and amount(r.get('최근 확인 VND','')) and safe_url(r.get('출처 링크','')) and re.fullmatch(r'20\d{2}-\d{2}-\d{2}',r.get('확인일','')) and r['확인일']<=datetime.now(KST).date().isoformat()]
+                if candidates:
+                    r=max(candidates,key=lambda row:row['확인일'])
+                    result['exchange_locations'].append({'location':label,'currency':currency,'posts':1,'mean_vnd':amount(r['최근 확인 VND']),'basis':'latest_known','source_date':r['확인일'],'source_url':r['출처 링크'],'from':r['확인일'],'to':r['확인일']})
+    return result
