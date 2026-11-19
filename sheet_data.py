@@ -130,7 +130,7 @@ def build_snapshot(tables):
             source_id, name = row.get('업체ID'), row.get('업체명')
             if not source_id or not name or (tab, source_id) in seen:
                 continue
-            if '사이트 노출 대상' in row and row['사이트 노출 대상'] != '포함':
+            if row.get('사이트 노출 대상') in ('제외','비공개','숨김'):
                 continue
             if tab == '이발소' and (
                 row.get('한국식 풀케어 확인') != '귀청소·마사지·손발톱 관리 확인'
@@ -240,6 +240,35 @@ def build_snapshot(tables):
 CITY_NAMES = {'danang':'다낭', 'nhatrang':'나트랑', 'phuquoc':'푸꾸옥'}
 EXCHANGE_NAMES = {'danang':['김옌','김가','손하','공항'], 'nhatrang':['김청','김빈','나트랑공항'], 'phuquoc':['금은방','킹콩마트 옆','푸꾸옥공항','GOOD&GOOD','킹콩마트 앞']}
 
+def verified_menus(place):
+    today=datetime.now(KST).date().isoformat()
+    oldest=(datetime.now(KST).date()-timedelta(days=180)).isoformat()
+    return [menu for menu in place.get('menus',[]) if isinstance(menu.get('low'),(int,float)) and menu['low']>0 and menu.get('high',0)>=menu['low'] and safe_url(menu.get('source','')) and re.fullmatch(r'20\d{2}-\d{2}-\d{2}',menu.get('date','')) and oldest<=menu['date']<=today]
+
+def representative_menu(place):
+    prices=[m for m in verified_menus(place) if not re.search(r'제거|추가요금|옵션|파일링|큐티클',m.get('name',''))]
+    if not prices:
+        return None
+    if place.get('category')=='네일':
+        preferred=[m for m in prices if '젤' in m.get('name','') and ('매니큐어' in m.get('name','') or '손' in m.get('name',''))]
+    else:
+        preferred=[m for m in prices if place.get('category')=='마사지' and m.get('minutes')==90 and m.get('service')=='아로마']
+    return min(preferred or prices,key=lambda m:m['low'])
+
+def place_is_ready(place):
+    prices=verified_menus(place)
+    booking=any(safe_url(place.get(key,'')) for key in ('kakao','reservation'))
+    features=len(str(place.get('services','')).strip())>=15 or bool(place.get('reviewEvidence')) or any(len(str(menu.get('conditions','')).strip())>=15 for menu in prices)
+    return bool(place.get('name') and place.get('address') and safe_url(place.get('map','')) and representative_menu(place) and booking and features)
+
+def publish_place(place):
+    result={**place,'menus':verified_menus(place)}
+    menu=representative_menu(place)
+    result['priceValue']=menu['low']
+    result['price']=(f"{menu['low']:,}~{menu['high']:,}동"if menu['low']!=menu['high']else f"{menu['low']:,}동")
+    result['priceBasis']=menu.get('name','')+(' · '+str(menu['minutes'])+'분'if menu.get('minutes')else '')
+    return result
+
 def read_workbook(client, include_places=True, city='danang'):
     if city not in CITY_NAMES:
         raise ValueError('Unknown city')
@@ -279,6 +308,7 @@ def read_workbook(client, include_places=True, city='danang'):
         if ref:
             row.update({'참고가격(통계 제외)':ref.get('참고가격',''),'참고 통화(통계 제외)':'VND','참고 날짜(통계 제외)':ref.get('기준일',''),'참고 제품·단위(통계 제외)':ref.get('제품·단위',''),'참고 출처(통계 제외)':ref['출처']})
     result=build_snapshot(tables)
+    result['places']=[publish_place(place) for place in result['places'] if place_is_ready(place)]
     result['city']=city
     result['exchange_names']=EXCHANGE_NAMES[city]
     if city!='danang':

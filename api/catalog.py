@@ -8,7 +8,7 @@ from pathlib import Path
 from urllib.parse import parse_qs, urlparse, unquote
 import gspread
 from google.oauth2.service_account import Credentials
-from sheet_data import read_workbook, CITY_NAMES
+from sheet_data import read_workbook, CITY_NAMES, place_is_ready, publish_place
 from article_service import home_metadata
 
 ROOT=Path(__file__).resolve().parents[1]
@@ -46,7 +46,7 @@ def render_catalog(city,live=True):
         except Exception as error:
             status='read-failed';print('Regional sheet read failed: '+city+' '+type(error).__name__,flush=True)
     snapshot['source_mode']='connected' if source=='sheets' else 'snapshot'
-    snapshot['places']=[p for p in snapshot.get('places',[]) if p.get('category') in ('마사지','네일','이발관')]
+    snapshot['places']=[publish_place(p) for p in snapshot.get('places',[]) if p.get('category') in ('마사지','네일','이발관') and place_is_ready(p)]
     html=with_data(html,snapshot)
     qr=ROOT/'assets/branding'/(city+'-qr.png')
     if qr.exists():

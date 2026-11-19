@@ -3,7 +3,7 @@ const cityLocations = {danang: {
   beach: [16.0536, 108.2479],
   bana: [15.9953, 107.9967],
   hoian: [15.877, 108.328],
-},nhatrang:{center:[12.2388,109.1967]},phuquoc:{center:[10.2167,103.9667]}};
+},nhatrang:{center:[12.2388,109.1967],hontre:[12.2167,109.2667],camranh:[11.99556,109.21833]},phuquoc:{center:[10.2167,103.9667],north:[10.327,103.858],south:[10.029,104.004],airport:[10.1698,103.9935],onglang:[10.27,103.927],saobeach:[10.057,104.034],khembeach:[10.034,104.031]}};
 
 export async function GET(request) {
   const query=new URL(request.url).searchParams;
