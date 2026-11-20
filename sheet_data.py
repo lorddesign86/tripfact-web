@@ -9,6 +9,7 @@ from urllib.parse import urlparse
 from gspread.exceptions import WorksheetNotFound
 from business_overrides import apply_direct_businesses
 from food_details import build_food_info
+from photo_gallery import attach_photo_galleries
 
 KST = timezone(timedelta(hours=9))
 
@@ -183,7 +184,10 @@ def build_snapshot(tables):
             })
 
     if '업체정보 직접보완' in tables:
-        places=apply_direct_businesses(places,tables['업체정보 직접보완'])
+        hidden={(str(row.get('업체ID','')),category) for tab,category in CATEGORIES.items() for row in tables[tab] if str(row.get('사이트 노출 대상','')).strip() in ('숨김','제외','비공개')}
+        places=apply_direct_businesses(places,tables['업체정보 직접보완'],hidden)
+
+    places=attach_photo_galleries(places,tables)
 
     products = []
     for row in tables['쇼핑목록']:
@@ -306,7 +310,7 @@ def read_workbook(client, include_places=True, city='danang'):
       '환전최근확인':choose('환전최근확인' if city=='danang' else name+'_최근확인'),
       '지역참고가격':choose(name+' 쇼핑참고가격')}
     if include_places:
-        for tab in [*CATEGORIES,'가격메뉴','업체리뷰 근거']:
+        for tab in [*CATEGORIES,'가격메뉴','업체리뷰 근거','출처·이미지']:
             mapping[tab]=choose(name+' '+tab,name+'_'+tab,*((tab,) if city=='danang' else ()))
         direct=choose(name+' 업체정보 직접보완',name+'_업체정보 직접보완',*(('업체정보 직접보완',) if city=='danang' else ()))
         if direct:

@@ -31,7 +31,9 @@ def tags_from(row):
    if tag not in result:result.append(tag)
  return result[:20]
 
-def apply_direct_businesses(places,rows):
+def apply_direct_businesses(places,rows,hidden=None):
+ hidden=hidden or set()
+ reclassified=set()
  by_id={}
  for p in places:
   source=p.get('sourceId')
@@ -47,8 +49,10 @@ def apply_direct_businesses(places,rows):
   if text(row,'보강 대상')!='핵심업체':continue
   selection=text(row,'업종 선택').replace('이발소','이발관')
   base=by_id.get(source,{})
+  if not any(category in selection for category in PRICE_FIELDS):continue
+  reclassified.add(source)
   for category in PRICE_FIELDS:
-   if category not in selection:continue
+   if category not in selection or (source,category)in hidden:continue
    tab='이발소'if category=='이발관'else category
    p={**base,'sourceId':source,'id':'sheet-'+hashlib.sha256((tab+':'+source).encode()).hexdigest()[:20],
       'name':text(row,'업체명·지점')or base.get('name',''),'category':category,'type':'spa','manualInput':True,
