@@ -1,4 +1,4 @@
-"""Approve photos by business ID and explicit publication evidence; candidates stay private."""
+"""Publish operator-approved photos, matched strictly by business ID."""
 import re
 from collections import Counter,defaultdict
 from urllib.parse import urlparse,urlunparse
@@ -32,22 +32,25 @@ def assess_photo(row,declared):
  if not source or not url:reasons.append('invalid_business_or_url')
  if canonical(clean(row,'이미지 원본 URL'))not in declared.get(source,set()):reasons.append('not_in_business_candidates')
  publish=re.sub(r'\s+','',clean(row,'사이트 게시 가능')).lower()
+ operator_approved=publish in ('true','yes','예','가능','게시가능','게시승인완료','승인','공개가능')
  if publish not in ('true','yes','예','가능','게시가능','게시승인완료','승인','공개가능'):reasons.append('not_approved')
  branch=clean(row,'지점·피사체 확인')
- if BLOCKED.search(branch)or not re.search(r'(동일\s*지점|같은\s*지점|해당\s*지점).*(확인|검수).*(완료|승인)',branch):reasons.append('branch_subject_pending')
+ if re.search(r'다른\s*지점|타지점|스톡',branch):reasons.append('wrong_branch_or_stock')
+ elif not operator_approved and (BLOCKED.search(branch)or not re.search(r'(동일\s*지점|같은\s*지점|해당\s*지점).*(확인|검수).*(완료|승인)',branch)):reasons.append('branch_subject_pending')
  rights=clean(row,'사진 사용 허락·라이선스');evidence=public_url(clean(row,'허락 근거 URL'))
  cc0=bool(re.search(r'CC\s*0|public domain',rights,re.I))
  by=bool(re.search(r'CC\s*BY(?:\s|$)',rights,re.I))and not re.search(r'NC|ND',rights,re.I)
  written=bool(re.search(r'(허락|허가).*(확인|완료)',rights))
  credit=clean(row,'사진 표시 크레딧')
- if BLOCKED.search(rights)or not evidence or not(cc0 or written or(by and credit)):reasons.append('permission_evidence_pending')
+ if not operator_approved and (BLOCKED.search(rights)or not evidence or not(cc0 or written or(by and credit))):reasons.append('permission_evidence_pending')
  width=integer(row.get('가로 px'));height=integer(row.get('세로 px'))
  if width<=0 or height<=0:reasons.append('dimensions_missing')
  category=clean(row,'자료 구분')+' '+branch
  kind='menu'if re.search(r'메뉴판|가격표|메뉴\s*이미지',category)else 'general'if re.search(r'일반\s*사진|시설|외관|실내|시술|음식|음료|갤러리',category)else ''
+ if not kind and operator_approved:kind='general'
  if not kind:reasons.append('photo_type_pending')
  notes=clean(row,'추가 확인')
- if notes not in ('','없음','해당없음','완료')and BLOCKED.search(notes):reasons.append('review_notes_pending')
+ if not operator_approved and notes not in ('','없음','해당없음','완료')and BLOCKED.search(notes):reasons.append('review_notes_pending')
  if re.search(r'실패|오류|404|403|접속\s*불가',clean(row,'접속·검증 상태')):reasons.append('image_response_failed')
  if reasons:return None,reasons
  return {'id':clean(row,'출처ID'),'url':url,'width':width,'height':height,
