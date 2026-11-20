@@ -34,6 +34,7 @@ def tags_from(row):
 def apply_direct_businesses(places,rows,hidden=None):
  hidden=hidden or set()
  reclassified=set()
+ allowed={(p.get('sourceId'),p.get('category')):p for p in places if p.get('category')in PRICE_FIELDS}
  by_id={}
  for p in places:
   source=p.get('sourceId')
@@ -46,13 +47,13 @@ def apply_direct_businesses(places,rows,hidden=None):
   if not source:continue
   if source in seen:raise ValueError('Duplicate manual business ID')
   seen.add(source)
-  if text(row,'보강 대상')!='핵심업체':continue
   selection=text(row,'업종 선택').replace('이발소','이발관')
   base=by_id.get(source,{})
   if not any(category in selection for category in PRICE_FIELDS):continue
-  reclassified.add(source)
   for category in PRICE_FIELDS:
-   if category not in selection or (source,category)in hidden:continue
+   if category not in selection or (source,category)in hidden or (source,category)not in allowed:continue
+   base=allowed[(source,category)]
+   reclassified.add((source,category))
    tab='이발소'if category=='이발관'else category
    p={**base,'sourceId':source,'id':'sheet-'+hashlib.sha256((tab+':'+source).encode()).hexdigest()[:20],
       'name':text(row,'업체명·지점')or base.get('name',''),'category':category,'type':'spa','manualInput':True,
@@ -77,4 +78,6 @@ def apply_direct_businesses(places,rows,hidden=None):
    p['reviewEvidence']=[e for e in base.get('reviewEvidence',[])];p['reviewHighlight']='';p['reviewCaution']=''
    # Internal review/research columns are deliberately never copied into public payloads.
    result.append(p)
+ # Businesses absent from the manual supplement remain visible from their own tabs.
+ result.extend(p for p in places if p['category']in PRICE_FIELDS and (p.get('sourceId'),p['category'])not in reclassified and (p.get('sourceId'),p['category'])not in hidden)
  return result

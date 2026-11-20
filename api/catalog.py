@@ -53,6 +53,8 @@ def render_catalog(city,live=True):
             status='read-failed';print('Regional sheet read failed: '+city+' '+type(error).__name__,flush=True)
     snapshot['source_mode']='connected' if source=='sheets' else 'snapshot'
     snapshot['places']=[publish_place(p) for p in snapshot.get('places',[]) if p.get('category') in ('마사지','네일','이발관','맛집','카페') and place_is_ready(p)]
+    from business_edits import load_business_edits
+    snapshot['places']=load_business_edits(snapshot['places'],city)
     html=with_data(html,snapshot)
     qr=ROOT/'assets/branding'/(city+'-qr.png')
     if qr.exists():
