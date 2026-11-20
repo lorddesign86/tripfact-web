@@ -100,3 +100,13 @@ def attach_photo_galleries(places,tables):
    entry={k:v for k,v in photo.items()if k not in ('_hash','kind','order')}
    place['menuImages'if photo['kind']=='menu'else'gallery'].append(entry)
  return places
+
+
+def ensure_main_photos(places):
+ for p in places:
+  if p.get('image'):continue
+  photos=[v for v in p.get('gallery',[]) if str(v.get('url','')).startswith('https://')]
+  if not photos:continue
+  photo=photos[0]
+  p.update(image=photo['url'],imageThumb=photo['url'],imageOriginal=photo['url'],imageSource=photo.get('credit',''))
+ return places

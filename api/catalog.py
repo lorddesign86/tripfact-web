@@ -55,6 +55,8 @@ def render_catalog(city,live=True):
     snapshot['places']=[publish_place(p) for p in snapshot.get('places',[]) if p.get('category') in ('마사지','네일','이발관','맛집','카페') and place_is_ready(p)]
     from business_edits import load_business_edits
     snapshot['places']=load_business_edits(snapshot['places'],city)
+    from photo_gallery import ensure_main_photos
+    ensure_main_photos(snapshot['places'])
     snapshot['hiddenPlaces']=[p for p in snapshot['places'] if p.get('adminHidden') is True]
     snapshot['places']=[p for p in snapshot['places'] if p.get('adminHidden') is not True]
     html=with_data(html,snapshot)
