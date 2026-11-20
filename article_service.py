@@ -74,10 +74,9 @@ def render_page(title, description, canonical, body, image=None, structured=None
     destinations=' · '.join('<a href="/'+v+'">'+v+'</a>'for v in CITY_NAMES.values())
     metadata = '<meta property="og:image" content="' + escape(image) + '">' if image else ''
     jsonld = '<script type="application/ld+json">' + json.dumps(structured, ensure_ascii=False).replace('<', '\\u003c') + '</script>' if structured else ''
-    return f'''<!doctype html><html lang="ko"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
-<title>{escape(title)}</title><meta name="description" content="{escape(description)}"><link rel="canonical" href="{escape(canonical)}">
-<meta property="og:title" content="{escape(title)}"><meta property="og:description" content="{escape(description)}"><meta property="og:url" content="{escape(canonical)}"><meta property="og:type" content="article">{metadata}{jsonld}
-<style>body{{margin:0;background:#f8faf5;color:#234237;font:16px/1.85 "Malgun Gothic",sans-serif}}main{{max-width:800px;margin:auto;padding:24px 18px 70px}}a{{color:#21846d}}header{{display:flex;gap:18px;justify-content:space-between;border-bottom:1px solid #dae4d5;padding-bottom:15px}}h1{{font-size:30px;line-height:1.4}}h2{{font-size:21px;margin-top:32px}}p,li{{overflow-wrap:anywhere}}.answer{{background:#eaf2e2;padding:18px;border-radius:14px}}.cover{{display:block;width:100%;height:auto;border-radius:15px}}small,.meta{{font-size:13px;color:#71816f}}table{{width:100%;border-collapse:collapse;font-size:14px}}td,th{{padding:10px;text-align:left;border-bottom:1px solid #dce6d5}}.table{{overflow:auto}}.article-link{{display:block;padding:20px 0;border-bottom:1px solid #dce6d5;text-decoration:none}}.article-link h2{{margin:0}}footer{{margin-top:35px}}@media(max-width:500px){{h1{{font-size:25px}}}}</style></head><body><main><header><a href="/{name}">지금 여행중 · {name}</a><a href="{article_index(city)}">{name} 여행정보</a></header>{body}<footer><a href="/{name}">{name} 홈으로 돌아가기</a><p>다른 여행지　{destinations}</p></footer></main></body></html>'''
+    from article_layout import article_shell
+    return article_shell(title,description,canonical,body,metadata,jsonld,city)
+
 
 
 def home_metadata(document, city='danang'):
@@ -104,10 +103,17 @@ def render_article(article):
     if cover:body+='<figure style="margin:20px 0"><img class="cover" src="'+escape(cover)+'" alt="'+escape(article['image_alt'])+'" width="1024" height="1024"></figure>'
     if facts.get('rows'):
         body+='<div class="table"><table>'+''.join('<tr><th>'+escape(r['label'])+'</th><td>'+escape(r['value'])+'</td></tr>'for r in facts['rows'])+'</table></div>'
-    body+=''.join('<section><h2>'+escape(x['heading'])+'</h2><p>'+escape(x['text']).replace('\n','<br>')+'</p></section>'for x in article['sections'])
+    if article['sections']:
+        body+='<nav class="article-toc" aria-label="글 목차"><b>이 글에서 알아볼 내용</b><ol>'+''.join('<li><a href="#section-'+str(i)+'">'+escape(x['heading'])+'</a></li>'for i,x in enumerate(article['sections']))+'</ol></nav>'
+    body+=''.join('<section id="section-'+str(i)+'"><h2>'+escape(x['heading'])+'</h2>'+''.join('<p>'+escape(v)+'</p>'for v in x['text'].split('\n')if v.strip())+'</section>'for i,x in enumerate(article['sections']))
     if article.get('faqs'):body+='<h2>자주 묻는 질문</h2>'+''.join('<h3>'+escape(x['question'])+'</h3><p>'+escape(x['answer'])+'</p>'for x in article['faqs'])
     if article.get('sources'):body+='<details><summary>참고 자료</summary><ul>'+''.join('<li><a href="'+escape(safe_link(x))+'" target="_blank" rel="noopener noreferrer">'+escape(x)+'</a></li>'for x in article['sources']if safe_link(x))+'</ul></details>'
-    body+='<p><a href="/'+name+'?tab=market">최신 쇼핑시세</a> · <a href="/'+name+'">환율·날씨</a></p></article>'
+    body+='<aside class="article-tools"><b>여행 준비, 지금 확인해 보세요</b><div><a href="/'+name+'?tab=market">쇼핑시세 확인 →</a><a href="/'+name+'">오늘 환율·날씨 →</a><a href="/'+name+'?tab=explore">업체정보 →</a></div></aside></article>'
+    try:
+        related=[r for r in public_articles(city=city) if r.get('slug')!=article.get('slug')][:3]
+    except Exception:related=[]
+    if related:
+        body+='<section class="related-articles"><h2>함께 읽으면 좋은 글</h2>'+''.join('<a class="article-link" href="'+escape(article_path(r))+'"><h3>'+escape(r['title'])+'</h3><p>'+escape(r['description'])+'</p></a>'for r in related)+'</section>'
     structured={'@context':'https://schema.org','@type':'Article','headline':article['title'],'description':article['description'],'datePublished':article.get('published_at')or article['created_at'],'dateModified':article['updated_at'],'mainEntityOfPage':url,'author':{'@type':'Organization','name':'지금 여행중'},'publisher':{'@type':'Organization','name':'지금 여행중'}}
     if cover:structured['image']=[cover]
     return render_page(article['title']+' | 지금 여행중 · '+name,article['description'],url,body,cover,structured,city=city)

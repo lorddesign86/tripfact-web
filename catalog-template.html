@@ -4187,6 +4187,8 @@ async function renderAdminSupportAccount(container,call){
     document.querySelector('.footer').append(link);
   }
   const params=new URLSearchParams(location.search);
+  const requested=params.get('tab');
+  if(['home','explore','social','favs','member','vendor','feedback'].includes(requested)){if(requested==='explore')openBeautyDirectory();else switchTab(requested);}
   if(params.get('tab')==='market'){
     switchTab('market');
     if(shoppingCatalogue.some(p=>p.id===params.get('product')))openShopProduct(params.get('product'));
