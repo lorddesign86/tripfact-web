@@ -96,7 +96,7 @@ def read_exchange_locations(rows, today=None):
     ]
 
 
-def build_snapshot(tables):
+def build_snapshot(tables, city='danang'):
     evidence = defaultdict(list)
     review_ids = set()
     for row in tables.get('업체리뷰 근거', []):
@@ -183,7 +183,11 @@ def build_snapshot(tables):
                 'foodFeatures': {key:str(row.get(key,'')).strip() for key in ('에어컨·좌석 구분','커피·디저트 강점','뷰·사진 포인트','좌석·가족·작업 적합성','혼잡·방문 전 확인') if row.get(key)},
             })
 
-    if '업체정보 직접보완' in tables:
+    if city!='danang':
+        from regional_businesses import build_regional_places
+        places,_=build_regional_places(tables,city)
+
+    if city=='danang' and '업체정보 직접보완' in tables:
         hidden={(str(row.get('업체ID','')),category) for tab,category in CATEGORIES.items() for row in tables[tab] if str(row.get('사이트 노출 대상','')).strip() in ('숨김','제외','비공개')}
         places=apply_direct_businesses(places,tables['업체정보 직접보완'],hidden)
 
@@ -354,9 +358,12 @@ def read_workbook(client, include_places=True, city='danang'):
         ref=references.get(row.get('품목ID'))
         if ref:
             row.update({'참고가격(통계 제외)':ref.get('참고가격',''),'참고 통화(통계 제외)':'VND','참고 날짜(통계 제외)':ref.get('기준일',''),'참고 제품·단위(통계 제외)':ref.get('제품·단위',''),'참고 출처(통계 제외)':ref['출처']})
-    result=build_snapshot(tables)
+    result=build_snapshot(tables,city=city)
     result['places']=[publish_place(place) for place in result['places'] if place_is_ready(place)]
     result['city']=city
+    if city!='danang':
+        from regional_businesses import REGIONS
+        result['directory_regions']=REGIONS[city]
     result['exchange_names']=EXCHANGE_NAMES[city]
     if city!='danang':
         result['exchange_locations']=[]
