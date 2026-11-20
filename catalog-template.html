@@ -463,6 +463,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .unified-admin .ad-visibility-row select{width:180px;max-width:100%;margin:0;padding:9px;font-size:13px}
 @media(max-width:600px){.unified-admin .ad-visibility-row{grid-template-columns:minmax(0,1fr) 24px}.unified-admin .ad-visibility-row select{grid-column:1/-1;width:100%}.admin-city-bar select{width:130px}}
 
+.seo-settings-form{display:grid;gap:12px}.seo-settings-form label,.seo-settings-form [data-fields],.seo-settings-form [data-verifications]{display:grid;gap:7px}.seo-settings-form [data-fields]{gap:13px}.seo-settings-form input:not([type=checkbox]),.seo-settings-form textarea{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;font:inherit}.seo-settings-form textarea{min-height:90px}.seo-settings-form small{color:var(--muted);font-size:12px}.seo-preview{max-width:500px;border:1px solid var(--line);border-radius:12px;overflow:hidden;background:#f5f7f1}.seo-preview img{display:block;width:100%;aspect-ratio:1200/630;object-fit:contain}.seo-preview img[hidden]{display:none}.seo-preview b,.seo-preview p{display:block;margin:12px 16px}.seo-preview p{font-size:13px;color:var(--muted)}
+
 .footer-support-links{display:inline-flex!important;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}.footer-feedback{border:0;background:transparent;color:#63826f;font-size:12px;padding:8px 2px;white-space:nowrap}.footer-feedback:hover{text-decoration:underline}
 #feedbackPage{max-width:820px;margin:auto;padding-bottom:90px}.feedback-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.feedback-row{border-bottom:1px solid #dfe7d9;padding:14px 0}.feedback-row summary{cursor:pointer;font-size:15px;font-weight:650;line-height:1.5}.feedback-row small{display:block;margin:10px 0;color:#75866d}.feedback-body,.feedback-answer p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.feedback-answer{padding:14px;border-radius:12px;background:#edf4e7;margin:14px 0}.feedback-form,.feedback-row form{display:grid;gap:14px;padding:18px;border:1px solid #dce6d5;border-radius:14px;margin:16px 0;background:#fffef9}.feedback-form label,.feedback-row form label{display:grid;gap:7px;font-size:14px}.feedback-form input,.feedback-form textarea,.feedback-form select,.feedback-row form textarea,.feedback-row form select{width:100%;padding:11px;border:1px solid #d5e1cb;border-radius:9px;min-width:0;font:inherit}.feedback-form .feedback-private{display:flex;align-items:center;gap:8px}.feedback-private input{width:18px;height:18px}.feedback-form button,.feedback-row form button{padding:10px 16px;border-radius:9px}
 
@@ -4823,6 +4825,29 @@ async function renderSiteFeedback(container,city,{admin=false,call=null}={}){
   const show=switchTab;switchTab=function(tab){page.classList.add('hidden');if(tab!=='feedback')page.replaceChildren();show(tab);if(tab==='feedback'){page.classList.remove('hidden');renderSiteFeedback(page,window.tripfactCity?.code||'danang');}};
 })();
 
+async function renderAdminSeo(container,city,call){
+ const names={danang:'다낭',nhatrang:'나트랑',phuquoc:'푸꾸옥'},name=names[city],esc=escapeHTML;
+ const defaults={site_name:'지금 여행중',title:'지금 여행중 · '+name+' | 환율·쇼핑시세·날씨·현지 여행정보',description:name+' 여행에 필요한 환전 사례 평균, 쇼핑 참고가격, 지역별 날씨와 업체정보를 한곳에서 확인하세요. 사고 싶은 품목은 내 찜에 모아 여행 목록으로 저장하고 공유할 수 있습니다.',intro:'지금 여행중은 여행지에서 잘 놀고 알뜰하게 쓰는 데 필요한 정보를 모으는 여행 커뮤니티입니다. '+name+'의 환율·쇼핑시세·날씨를 살펴보고, 업체정보와 현지 이야기를 확인하며 나만의 여행 목록을 만들어 보세요.',keywords:name+' 여행, '+name+' 환율, '+name+' 환전, '+name+' 쇼핑시세, '+name+' 날씨, '+name+' 마사지, '+name+' 맛집, 지금 여행중',og_title:name+' 여행, 필요한 정보만 쏙 | 지금 여행중',og_description:'환율부터 쇼핑시세·날씨까지 한눈에. 내 찜에 담아 나만의 '+name+' 여행 목록을 만들어 보세요.',og_image:location.origin+'/assets/branding/'+city+'-og.png',google_verification:'',naver_verification:'',indexable:true};
+ container.textContent='설정 불러오는 중…';let settings;
+ try{settings={...defaults,...await call('tripfact_admin_seo',{p_city:city})};}catch(error){container.textContent=error.message+' · 043 SEO 설정 SQL을 먼저 실행해 주세요.';return;}
+ if(!container.isConnected)return;
+ container.innerHTML='<form class="seo-settings-form"><h3>사이트 기본정보</h3><div data-fields></div><h3>공유 썸네일</h3><label>이미지 업로드<input type="file" name="photo" accept="image/jpeg,image/png,image/webp"></label><small>가로형 1200 × 630 권장 · JPG·PNG·WebP · 최대 10MB</small><div class="seo-preview"><img hidden alt="공유 이미지 미리보기"><b data-og-title></b><p data-og-description></p></div><h3>검색엔진 HEAD 인증</h3><div data-verifications></div><label><input type="checkbox" name="indexable"> 검색엔진에 공개</label><small>인증 코드는 구글 Search Console·네이버 서치어드바이저에서 발급한 content 값만 입력하세요.</small><div><button class="primary" type="submit">저장</button> <button type="button" class="vendor-link" data-defaults>기본문구 불러오기</button></div><p role="status"></p></form>';
+ const form=container.querySelector('form'),status=form.querySelector('[role=status]');
+ const labels={site_name:'사이트 이름',title:'검색용 제목',description:'검색용 설명',intro:'사이트 소개',keywords:'주제 키워드',og_title:'링크 공유 제목',og_description:'링크 공유 설명',og_image:'공유 이미지 주소'};
+ for(const [key,label]of Object.entries(labels)){const wrapper=document.createElement('label');wrapper.textContent=label;const input=document.createElement(['description','intro','og_description'].includes(key)?'textarea':'input');input.name=key;input.maxLength=key==='intro'?3000:600;if(key==='og_image')input.type='url';input.value=settings[key];wrapper.append(input);form.querySelector('[data-fields]').append(wrapper);}
+ for(const [key,label]of [['google_verification','구글 사이트 인증 코드'],['naver_verification','네이버 사이트 인증 코드']]){const wrapper=document.createElement('label');wrapper.textContent=label;const input=document.createElement('input');input.name=key;input.maxLength=300;input.value=settings[key];wrapper.append(input);form.querySelector('[data-verifications]').append(wrapper);}
+ form.elements.indexable.checked=settings.indexable;
+ let previewUrl='',pendingFile=null;
+ function preview(){form.querySelector('[data-og-title]').textContent=form.elements.og_title.value||form.elements.title.value;form.querySelector('[data-og-description]').textContent=form.elements.og_description.value||form.elements.description.value;const img=form.querySelector('.seo-preview img'),url=previewUrl||form.elements.og_image.value;img.hidden=!url;if(url)img.src=url;}
+ form.oninput=preview;form.elements.photo.onchange=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);pendingFile=form.elements.photo.files[0]||null;previewUrl=pendingFile?URL.createObjectURL(pendingFile):'';preview();};
+ form.querySelector('[data-defaults]').onclick=()=>{for(const key of Object.keys(labels))if(key!=='og_image')form.elements[key].value=defaults[key];preview();};
+ form.onsubmit=async event=>{event.preventDefault();const button=form.querySelector('[type=submit]');button.disabled=true;status.textContent='저장 중…';let uploaded='',client;
+ try{const data={};for(const key of [...Object.keys(labels),'google_verification','naver_verification'])data[key]=form.elements[key].value.trim();data.indexable=form.elements.indexable.checked;
+ if(pendingFile){if(!['image/jpeg','image/png','image/webp'].includes(pendingFile.type)||pendingFile.size>10485760)throw new Error('JPG·PNG·WebP 이미지를 10MB 이하로 선택해 주세요.');client=await tripfactAccount.client();const bitmap=await createImageBitmap(pendingFile),scale=Math.min(1,1600/bitmap.width,1600/bitmap.height),canvas=document.createElement('canvas');canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.9));if(!blob||blob.size>4194304)throw new Error('더 작은 이미지를 선택해 주세요.');uploaded=city+'/'+crypto.randomUUID()+'.webp';const result=await client.storage.from('tripfact-business-photos').upload(uploaded,blob,{contentType:'image/webp',upsert:false});if(result.error)throw result.error;data.og_image=client.storage.from('tripfact-business-photos').getPublicUrl(uploaded).data.publicUrl;}
+ await call('tripfact_admin_seo',{p_city:city,p_settings:data});form.elements.og_image.value=data.og_image;pendingFile=null;form.elements.photo.value='';status.textContent='저장했습니다. 새로 요청하는 페이지에 반영됩니다. 공유 앱에 저장된 미리보기는 갱신까지 시간이 걸릴 수 있습니다.';
+ }catch(error){status.textContent=error.message;if(uploaded&&client)await client.storage.from('tripfact-business-photos').remove([uploaded]);}finally{button.disabled=false;preview();}};preview();
+}
+
 function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers){
   const original=[...container.children];
   const cityNames={danang:'다낭',nhatrang:'나트랑',phuquoc:'푸꾸옥'};
@@ -4832,7 +4857,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
   container.replaceChildren(shell);
   const select=shell.querySelector('[data-city]'),nav=shell.querySelector('nav'),area=shell.querySelector('[data-regional]'),common=shell.querySelector('[data-common]'),scope=shell.querySelector('[data-scope]');
   select.value=city;
-  const labels={stats:'통계 · 가격 제보',support:'후원 · 포인트',members:'회원 관리',ads:'광고 관리',community:'커뮤니티 관리',articles:'여행정보 관리',data:'시트 · 날씨 연결',feedback:'문의 · 기능요청',spam:'스팸 · 차단 공통',automation:'자동생성 설정'};
+  const labels={stats:'통계 · 가격 제보',support:'후원 · 포인트',members:'회원 관리',ads:'광고 관리',community:'커뮤니티 관리',articles:'여행정보 관리',seo:'SEO · 공유 설정',data:'시트 · 날씨 연결',feedback:'문의 · 기능요청',spam:'스팸 · 차단 공통',automation:'자동생성 설정'};
   const commonSections={support:[4,6,12,13],members:[5,7],spam:[3],automation:[2]};
   const commonPanels={};for(const [key,indexes] of Object.entries(commonSections)){const panel=document.createElement('div');panel.hidden=true;for(const index of indexes)if(original[index])panel.append(original[index]);commonPanels[key]=panel;common.append(panel);}
   function section(title){const node=document.createElement('section');node.className='panel';const h=document.createElement('h2');h.textContent=title;node.append(h);area.append(node);return node;}
@@ -4921,6 +4946,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
         for(const [action,label]of [['hide','예시 전체 숨김'],['show','예시 다시 표시'],['delete','예시 전체 삭제']])button(label,async()=>{if(action==='delete'&&!confirm('이 지역의 예시 글 전체를 삭제할까요?'))return;await examples(action);},panel);
         await examples();if(isCurrent())await content(section(cityNames[selected]+' 커뮤니티 게시글'),'community',rpc,isCurrent);
       }
+      else if(key==='seo')await renderAdminSeo(section(cityNames[selected]+' SEO · 공유 설정'),selected,call);
       else if(key==='feedback')await renderSiteFeedback(section(cityNames[selected]+' 문의 · 기능요청'),selected,{admin:true,call});
       else if(key==='articles'){
         const client=await tripfactAccount.client();

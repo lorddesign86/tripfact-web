@@ -75,7 +75,8 @@ def render_page(title, description, canonical, body, image=None, structured=None
     metadata = '<meta property="og:image" content="' + escape(image) + '">' if image else ''
     jsonld = '<script type="application/ld+json">' + json.dumps(structured, ensure_ascii=False).replace('<', '\\u003c') + '</script>' if structured else ''
     from article_layout import article_shell
-    return article_shell(title,description,canonical,body,metadata,jsonld,city)
+    from seo_settings import apply
+    return apply(article_shell(title,description,canonical,body,metadata,jsonld,city),city,article=True)
 
 
 

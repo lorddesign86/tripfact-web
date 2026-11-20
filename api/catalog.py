@@ -71,6 +71,8 @@ def render_catalog(city,live=True):
             html=html.replace("'"+key+"'","'"+key+'-'+city+"'")
     html=home_metadata(html,city=city)
     if city!='danang':html=html.replace('다낭 여행자를',CITY_NAMES[city]+' 여행자를').replace('지금 여행중 · 다낭','지금 여행중 · '+CITY_NAMES[city]).replace('/다낭"','/'+CITY_NAMES[city]+'"')
+    from seo_settings import apply
+    html=apply(html,city)
     return html,source,status
 
 class handler(BaseHTTPRequestHandler):
