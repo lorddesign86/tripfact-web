@@ -37,6 +37,12 @@ def resolve_city(path):
 
 def render_catalog(city,live=True):
     html=TEMPLATE.read_text(encoding='utf-8')
+    schedules=ROOT/'festival-schedules.json'
+    a,b='/* FESTIVAL_SCHEDULES_START */','/* FESTIVAL_SCHEDULES_END */'
+    if schedules.exists() and a in html and b in html:
+        data=json.loads(schedules.read_text(encoding='utf-8'))
+        prefix,rest=html.split(a,1);_,suffix=rest.split(b,1)
+        html=prefix+a+json.dumps(data,ensure_ascii=False).replace('<','\\u003c')+b+suffix
     saved=ROOT/'city-data'/(city+'.json')
     snapshot=json.loads(saved.read_text(encoding='utf-8')) if saved.exists() else json.loads(html.split(START,1)[1].split(END,1)[0])
     if snapshot.get('city')!=city:raise ValueError('Regional fallback mismatch')

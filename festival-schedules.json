@@ -1,0 +1,291 @@
+{
+  "checked": "2026-11-20",
+  "events": [
+    {
+      "id": "dn-dragon",
+      "city": "danang",
+      "title": "용다리 불·물쇼",
+      "region": "다낭 시내",
+      "venue": "Dragon Bridge, Da Nang",
+      "summary": "용다리에서 불과 물을 뿜는 야간 공연.",
+      "source": "https://danangfantasticity.com/en/countdown-event/the-dragon-show",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "21:00"
+      ],
+      "weekdays": [
+        5,
+        6,
+        0
+      ],
+      "fee": "공공 관람 공간 무료",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "dn-lantern-2026",
+      "city": "danang",
+      "title": "호이안 국제 등불축제",
+      "region": "호이안",
+      "venue": "Hoi An Ancient Town",
+      "summary": "등불 전시·제작 체험·예술 교류·등불 퍼레이드.",
+      "source": "https://danangfantasticity.com/en/hoi-an-international-lantern-festival/hoi-an-international-lantern-festival-2026-meet-amid-the-colors-of-heritage",
+      "start": "2026-12-03",
+      "end": "2026-12-06",
+      "times": [],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "",
+      "kind": "축제",
+      "checked": "2026-11-20",
+      "recurring": false
+    },
+    {
+      "id": "dn-heritage-2026",
+      "city": "danang",
+      "title": "호이안 문화유산의 날 행사",
+      "region": "호이안",
+      "venue": "Hoi An Ancient Town",
+      "summary": "문화유산의 날 기념 기간 행사.",
+      "source": "https://danangfantasticity.com/vi/discovery/danang-2026-the-official-events-festivals-calendar",
+      "start": "2026-11-23",
+      "end": "2026-12-07",
+      "times": [],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "",
+      "kind": "문화행사",
+      "checked": "2026-11-20",
+      "recurring": false
+    },
+    {
+      "id": "dn-christmas-market-2026",
+      "city": "danang",
+      "title": "다낭 크리스마스 마켓",
+      "region": "미케비치",
+      "venue": "Ariyana Convention Centre Da Nang",
+      "summary": "연말 먹거리·선물·수공예 마켓.",
+      "source": "https://danangfantasticity.com/en/news/top-events-and-festivals-in-da-nang-from-mid-2026-to-early-2027",
+      "start": "2026-12-04",
+      "end": "2026-12-06",
+      "times": [],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "",
+      "kind": "마켓",
+      "checked": "2026-11-20",
+      "recurring": false
+    },
+    {
+      "id": "dn-hoian-christmas-2026",
+      "city": "danang",
+      "title": "호이안 크리스마스",
+      "region": "호이안",
+      "venue": "Hoi An Ancient Town",
+      "summary": "호이안 구시가지 크리스마스 기간 행사.",
+      "source": "https://danangfantasticity.com/vi/discovery/danang-2026-the-official-events-festivals-calendar",
+      "start": "2026-12-24",
+      "end": "2026-12-25",
+      "times": [],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "",
+      "kind": "문화행사",
+      "checked": "2026-11-20",
+      "recurring": false
+    },
+    {
+      "id": "nt-tata",
+      "city": "nhatrang",
+      "title": "타타쇼",
+      "region": "혼쩨섬·빈원더스",
+      "venue": "VinWonders Nha Trang, Mythical Square",
+      "summary": "음악·조명·무대 효과가 어우러지는 공연.",
+      "source": "https://vinwonders.com/vi/vinwonders-nha-trang/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "19:30"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "빈원더스 입장권 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "nt-parade",
+      "city": "nhatrang",
+      "title": "프린세스 타타 퍼레이드",
+      "region": "혼쩨섬·빈원더스",
+      "venue": "VinWonders Nha Trang, Mythical Square",
+      "summary": "캐릭터와 공연진이 함께하는 퍼레이드.",
+      "source": "https://vinwonders.com/vi/vinwonders-nha-trang/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "16:45"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "빈원더스 입장권 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "nt-water",
+      "city": "nhatrang",
+      "title": "빈원더스 음악분수쇼",
+      "region": "혼쩨섬·빈원더스",
+      "venue": "VinWonders Nha Trang, Musical Water Fountain Stage",
+      "summary": "음악에 맞춘 분수 공연.",
+      "source": "https://vinwonders.com/en/wonderpedia/news/vinwonders-nha-trang-show-schedule/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "19:00"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "빈원더스 입장권 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "nt-birds",
+      "city": "nhatrang",
+      "title": "킹스가든 버드쇼",
+      "region": "혼쩨섬·빈원더스",
+      "venue": "VinWonders Nha Trang, King's Garden",
+      "summary": "다양한 새들과 만나는 공연.",
+      "source": "https://vinwonders.com/en/wonderpedia/news/vinwonders-nha-trang-show-schedule/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "11:00",
+        "15:00"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "빈원더스 입장권 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "pq-quintessence",
+      "city": "phuquoc",
+      "title": "베트남의 정수",
+      "region": "북부·그랜드월드",
+      "venue": "Grand World Phu Quoc",
+      "summary": "베트남 전통문화를 무대와 빛으로 만나는 실경 공연.",
+      "source": "https://vinwonders.com/vi/the-quintessence-of-vietnam/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "20:15"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "유료 · 공식 예매 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "pq-venice",
+      "city": "phuquoc",
+      "title": "컬러 오브 베니스",
+      "region": "북부·그랜드월드",
+      "venue": "Love Lake, Grand World Phu Quoc",
+      "summary": "호수 위에서 펼쳐지는 음악·빛·물 공연.",
+      "source": "https://vinwonders.com/vi/wonderpedia/news/sac-mau-venice-phu-quoc-dam-chim-trong-cau-chuyen-tinh-co-tich/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "21:30"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "무료",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    }
+  ]
+}

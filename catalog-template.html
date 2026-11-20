@@ -223,6 +223,15 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 
 .community-post-open{position:relative}.community-post-open:has(.community-photo-thumb){padding-right:110px;min-height:104px}.community-photo-thumb{position:absolute;right:0;top:8px;width:92px;height:92px}.community-photo-thumb img{width:100%;height:100%;object-fit:cover;border-radius:12px}.community-photo-thumb span{position:absolute;right:5px;bottom:5px;padding:3px 7px;border-radius:8px;background:#243c34cc;color:white;font-size:12px}.community-photo-gallery{display:grid;gap:10px;margin:14px 0}.community-photo-gallery img{max-width:100%;width:100%;max-height:760px;object-fit:contain;border-radius:12px}.community-photo-previews{display:flex;gap:8px;overflow-x:auto}.community-photo-previews img{width:76px;height:76px;object-fit:cover;border-radius:10px;flex-shrink:0}
 
+.home-festival-line{order:2;display:block;width:100%;min-width:0;margin:9px 0;padding:7px 2px;text-align:left;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--green);border-bottom:1px solid var(--line)}
+.home-festival-line[hidden]{display:none!important}.festival-filters{display:flex;gap:6px;flex-wrap:wrap;padding:12px 0}.festival-filters button{border:1px solid var(--line);border-radius:20px;padding:7px 11px;font-size:13px}.festival-filters button.active{background:var(--green);color:white}.festival-filters input{max-width:100%;border:1px solid var(--line);border-radius:8px;padding:6px}.festival-note{font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 15px}.festival-card{display:grid;grid-template-columns:106px minmax(0,1fr) 30px;gap:12px;padding:20px 0;border-bottom:1px solid var(--line)}.festival-date b{display:block;color:var(--green);font-size:14px}.festival-date small{font-size:11px;color:var(--muted)}.festival-title{font-size:17px;font-weight:750;padding:0;text-align:left}.festival-copy p{margin:5px 0;font-size:13px;overflow-wrap:anywhere}.festival-copy>small{font-size:12px;color:var(--muted)}.festival-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:center}.festival-actions a,.festival-actions button:not(.primary){color:var(--green);font-size:13px}.festival-heart{font-size:23px;align-self:start;color:var(--green)}.festival-schedule{font-size:20px;font-weight:700;color:var(--green)}.festival-empty{padding:25px 0;color:var(--muted)}.festival-saved-row{display:block;width:100%;text-align:left;padding:13px 0;border-bottom:1px solid var(--line)}
+#communityPage[data-view=festivals] .community-compose-fab,#communityPage[data-view=festivals] .community-tools{display:none!important}
+@media(max-width:600px){.festival-card{grid-template-columns:82px minmax(0,1fr) 24px;gap:8px}.festival-date b{font-size:12px}.festival-title{font-size:16px}.community-categories{overflow-x:auto;flex-wrap:nowrap}.community-categories button{flex-shrink:0}.home-festival-line{font-size:12px}}
+
+#homePage>.hero{order:3}#homePage>.travel-note{order:4}
+
+.community-categories{scrollbar-width:none}.community-categories::-webkit-scrollbar{display:none}#communityPage[data-view=festivals]>p.vendor-help{display:none}
+
 #eventPosts { display:grid;grid-template-columns:minmax(0,1fr);gap:12px; }
 #eventsPage { max-width:900px;margin-inline:auto; }
 #eventsPage>.subtitle { font-size:14px; }
@@ -2843,7 +2852,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE. */
   });
 
   const updateCount = () => {
-    $('savedCount').textContent = shoppingCatalogue.filter(p => shoppingFavorites.includes(p.marketIndex)).length + places.filter(p=>favorites.includes(p.id)).length;
+    $('savedCount').textContent = shoppingCatalogue.filter(p => shoppingFavorites.includes(p.marketIndex)).length + places.filter(p=>favorites.includes(p.id)).length+(window.tripfactFestivalSavedCount?.()||0);
   };
   const showFavorites = renderFavoriteGroups;
   renderFavoriteGroups = function () {
@@ -2872,7 +2881,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE. */
   const page=document.createElement('section');
   page.id='communityPage';page.className='subpage hidden community-page';
   page.innerHTML=`<div class="community-heading"><h1>지금 다낭</h1><details class="community-options"><summary aria-label="커뮤니티 메뉴">☰</summary><div><button type="button" data-mine aria-pressed="false">내 글·참여한 방</button><button type="button" data-refresh>새로고침</button></div></details></div>
-    <div class="community-categories" aria-label="글 카테고리">${[['','전체'],['daily','일상'],['question','질문'],['together','같이해요'],['sharing','나눔']].map(([key,label])=>`<button type="button" data-category-filter="${key}" aria-pressed="${key===''}">${label}</button>`).join('')}</div>
+    <div class="community-categories" aria-label="글 카테고리">${[['','전체'],['daily','일상'],['question','질문'],['together','같이해요'],['sharing','나눔'],['festivals','축제·공연']].map(([key,label])=>`<button type="button" data-category-filter="${key}" aria-pressed="${key===''}">${label}</button>`).join('')}</div>
     <p class="vendor-help">운영팀이 준비한 예시 글이 포함되어 있습니다.</p><div class="community-tools"><label>지역<select data-region><option value="">전체 지역</option>${regionOptions}</select></label>
     <span class="community-sort">작성일 최신순</span></div>
     <div data-community-ad></div><p class="community-status" role="status" aria-live="polite"></p><div data-writer></div><div data-content></div><button class="shop-more hidden" data-more>더 보기</button><button class="primary community-compose-fab" data-compose>＋ 글쓰기</button>`;
@@ -2900,10 +2909,13 @@ OTHER DEALINGS IN THE FONT SOFTWARE. */
   function selectCategory(category) {
     clearWriting();
     state.category=category;
+    page.querySelector('[data-compose]').hidden=category==='festivals';
+    page.querySelector('.community-tools').hidden=category==='festivals';
     page.querySelectorAll('[data-category-filter]').forEach(b=>b.setAttribute('aria-pressed',b.dataset.categoryFilter===category));
     page.querySelector('[data-mine]').setAttribute('aria-pressed',category==='mine');
     return loadFeed();
   }
+  window.tripfactOpenFestivals=(id=null)=>{switchTab('social');selectCategory('festivals');if(id)window.tripfactFestivals?.open(id);};
   const esc=escapeHTML;
   const stamp=value=>new Date(value).toLocaleString('ko-KR',{timeZone:'Asia/Ho_Chi_Minh',month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'});
   const say=text=>{status.textContent=text;};
@@ -3067,10 +3079,14 @@ OTHER DEALINGS IN THE FONT SOFTWARE. */
     return article;
   }
   async function loadFeed(append=false) {
+    page.querySelector('[data-compose]').hidden=state.category==='festivals';page.querySelector('.community-tools').hidden=state.category==='festivals';
+    const seedNotice=page.querySelector(':scope > p.vendor-help');if(seedNotice)seedNotice.hidden=state.category==='festivals';
+    const currentCategory=page.querySelector('[data-category-filter="'+state.category+'"]');if(currentCategory){const nav=currentCategory.parentElement;nav.scrollLeft=Math.max(0,currentCategory.offsetLeft-nav.offsetLeft-nav.clientWidth+currentCategory.offsetWidth);}
     page.dataset.view='feed';window.tripfactAds?.renderCommunity(state.category);
     const version=++state.version;state.selected=null;more.classList.add('hidden');
     if(!append){state.rows=[];content.textContent='이야기 불러오는 중…';}
     say('');
+    if(state.category==='festivals'){page.dataset.view='festivals';page.querySelector('[data-community-ad]').replaceChildren();window.tripfactFestivals?.render(content);return;}
     const last=append?state.rows.at(-1):null;
     try {
       const result=await call('tripfact_social_read',{
@@ -3303,6 +3319,390 @@ async function renderAdminCommunity(container,call) {
     }
   }catch{container.textContent='Supabase에 010 지금 다낭 SQL을 적용한 뒤 확인해 주세요.';}
 }
+
+(() => {
+  const catalogue=/* FESTIVAL_SCHEDULES_START */{
+  "checked": "2026-11-20",
+  "events": [
+    {
+      "id": "dn-dragon",
+      "city": "danang",
+      "title": "용다리 불·물쇼",
+      "region": "다낭 시내",
+      "venue": "Dragon Bridge, Da Nang",
+      "summary": "용다리에서 불과 물을 뿜는 야간 공연.",
+      "source": "https://danangfantasticity.com/en/countdown-event/the-dragon-show",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "21:00"
+      ],
+      "weekdays": [
+        5,
+        6,
+        0
+      ],
+      "fee": "공공 관람 공간 무료",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "dn-lantern-2026",
+      "city": "danang",
+      "title": "호이안 국제 등불축제",
+      "region": "호이안",
+      "venue": "Hoi An Ancient Town",
+      "summary": "등불 전시·제작 체험·예술 교류·등불 퍼레이드.",
+      "source": "https://danangfantasticity.com/en/hoi-an-international-lantern-festival/hoi-an-international-lantern-festival-2026-meet-amid-the-colors-of-heritage",
+      "start": "2026-12-03",
+      "end": "2026-12-06",
+      "times": [],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "",
+      "kind": "축제",
+      "checked": "2026-11-20",
+      "recurring": false
+    },
+    {
+      "id": "dn-heritage-2026",
+      "city": "danang",
+      "title": "호이안 문화유산의 날 행사",
+      "region": "호이안",
+      "venue": "Hoi An Ancient Town",
+      "summary": "문화유산의 날 기념 기간 행사.",
+      "source": "https://danangfantasticity.com/vi/discovery/danang-2026-the-official-events-festivals-calendar",
+      "start": "2026-11-23",
+      "end": "2026-12-07",
+      "times": [],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "",
+      "kind": "문화행사",
+      "checked": "2026-11-20",
+      "recurring": false
+    },
+    {
+      "id": "dn-christmas-market-2026",
+      "city": "danang",
+      "title": "다낭 크리스마스 마켓",
+      "region": "미케비치",
+      "venue": "Ariyana Convention Centre Da Nang",
+      "summary": "연말 먹거리·선물·수공예 마켓.",
+      "source": "https://danangfantasticity.com/en/news/top-events-and-festivals-in-da-nang-from-mid-2026-to-early-2027",
+      "start": "2026-12-04",
+      "end": "2026-12-06",
+      "times": [],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "",
+      "kind": "마켓",
+      "checked": "2026-11-20",
+      "recurring": false
+    },
+    {
+      "id": "dn-hoian-christmas-2026",
+      "city": "danang",
+      "title": "호이안 크리스마스",
+      "region": "호이안",
+      "venue": "Hoi An Ancient Town",
+      "summary": "호이안 구시가지 크리스마스 기간 행사.",
+      "source": "https://danangfantasticity.com/vi/discovery/danang-2026-the-official-events-festivals-calendar",
+      "start": "2026-12-24",
+      "end": "2026-12-25",
+      "times": [],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "",
+      "kind": "문화행사",
+      "checked": "2026-11-20",
+      "recurring": false
+    },
+    {
+      "id": "nt-tata",
+      "city": "nhatrang",
+      "title": "타타쇼",
+      "region": "혼쩨섬·빈원더스",
+      "venue": "VinWonders Nha Trang, Mythical Square",
+      "summary": "음악·조명·무대 효과가 어우러지는 공연.",
+      "source": "https://vinwonders.com/vi/vinwonders-nha-trang/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "19:30"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "빈원더스 입장권 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "nt-parade",
+      "city": "nhatrang",
+      "title": "프린세스 타타 퍼레이드",
+      "region": "혼쩨섬·빈원더스",
+      "venue": "VinWonders Nha Trang, Mythical Square",
+      "summary": "캐릭터와 공연진이 함께하는 퍼레이드.",
+      "source": "https://vinwonders.com/vi/vinwonders-nha-trang/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "16:45"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "빈원더스 입장권 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "nt-water",
+      "city": "nhatrang",
+      "title": "빈원더스 음악분수쇼",
+      "region": "혼쩨섬·빈원더스",
+      "venue": "VinWonders Nha Trang, Musical Water Fountain Stage",
+      "summary": "음악에 맞춘 분수 공연.",
+      "source": "https://vinwonders.com/en/wonderpedia/news/vinwonders-nha-trang-show-schedule/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "19:00"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "빈원더스 입장권 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "nt-birds",
+      "city": "nhatrang",
+      "title": "킹스가든 버드쇼",
+      "region": "혼쩨섬·빈원더스",
+      "venue": "VinWonders Nha Trang, King's Garden",
+      "summary": "다양한 새들과 만나는 공연.",
+      "source": "https://vinwonders.com/en/wonderpedia/news/vinwonders-nha-trang-show-schedule/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "11:00",
+        "15:00"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "빈원더스 입장권 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "pq-quintessence",
+      "city": "phuquoc",
+      "title": "베트남의 정수",
+      "region": "북부·그랜드월드",
+      "venue": "Grand World Phu Quoc",
+      "summary": "베트남 전통문화를 무대와 빛으로 만나는 실경 공연.",
+      "source": "https://vinwonders.com/vi/the-quintessence-of-vietnam/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "20:15"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "유료 · 공식 예매 조건 확인",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    },
+    {
+      "id": "pq-venice",
+      "city": "phuquoc",
+      "title": "컬러 오브 베니스",
+      "region": "북부·그랜드월드",
+      "venue": "Love Lake, Grand World Phu Quoc",
+      "summary": "호수 위에서 펼쳐지는 음악·빛·물 공연.",
+      "source": "https://vinwonders.com/vi/wonderpedia/news/sac-mau-venice-phu-quoc-dam-chim-trong-cau-chuyen-tinh-co-tich/",
+      "start": "2026-11-20",
+      "end": "2026-12-20",
+      "times": [
+        "21:30"
+      ],
+      "weekdays": [
+        0,
+        1,
+        2,
+        3,
+        4,
+        5,
+        6
+      ],
+      "fee": "무료",
+      "kind": "공연",
+      "checked": "2026-11-20",
+      "recurring": true
+    }
+  ]
+}/* FESTIVAL_SCHEDULES_END */;
+  const city=window.tripfactCity?.code||'danang',esc=escapeHTML;
+  const events=(catalogue.events||[]).filter(e=>e.city===city);
+  const key='tripfact-festival-favs-'+city;
+  let saved=[];try{saved=JSON.parse(localStorage.getItem(key)||'[]');if(!Array.isArray(saved))saved=[];}catch{}
+  window.tripfactFestivalSavedCount=()=>saved.filter(id=>events.some(e=>e.id===id)).length;
+  function syncCount(){const n=window.tripfactFestivalSavedCount();$('savedCount').textContent=shoppingCatalogue.filter(p=>shoppingFavorites.includes(p.marketIndex)).length+places.filter(p=>favorites.includes(p.id)).length+n;}
+  const cards=renderCards;renderCards=function(){const result=cards();syncCount();return result;};
+  let filter='all',selectedDate='',root=null;
+  const today=()=>new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Ho_Chi_Minh'}).format(new Date());
+  const addDays=(date,n)=>new Date(Date.parse(date+'T12:00:00Z')+n*86400000).toISOString().slice(0,10);
+  const map=e=>'https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(e.venue);
+  function next(e,from=today(),to=addDays(from,60),now=Date.now()){
+    if(e.cancelled||e.hidden)return null;
+    let date=from>e.start?from:e.start;
+    const limit=to<e.end?to:e.end;
+    for(;date<=limit;date=addDays(date,1)){
+      if(!e.recurring)return {event:e,date,time:'',at:Date.parse(date+'T00:00:00+07:00')};
+      if(!e.weekdays.includes(new Date(date+'T12:00:00Z').getUTCDay()))continue;
+      for(const time of [...e.times].sort()){
+        const at=Date.parse(date+'T'+time+':00+07:00');
+        if(at>=now)return {event:e,date,time,at};
+      }
+    }
+    return null;
+  }
+  function upcoming(mode=filter,date=selectedDate,now=Date.now()){
+    const start=today();let from=start,to=addDays(start,60);
+    if(mode==='today')to=start;
+    if(mode==='week')to=addDays(start,6);
+    if(mode==='date'){if(!date||date<start)return [];from=date;to=date;}
+    return events.map(e=>next(e,from,to,now)).filter(Boolean).sort((a,b)=>a.at-b.at||a.event.title.localeCompare(b.event.title));
+  }
+  function dateLabel(item){
+    const e=item.event;
+    if(!e.recurring)return e.start.slice(5).replace('-','.')+' ~ '+e.end.slice(5).replace('-','.');
+    return item.date.slice(5).replace('-','.')+' '+item.time;
+  }
+  function toggle(id){
+    saved=saved.includes(id)?saved.filter(x=>x!==id):[...saved,id];
+    try{localStorage.setItem(key,JSON.stringify(saved));}catch{}
+    if(root)render(root);
+    renderFavoriteGroups();syncCount();
+  }
+  function render(target){
+    root=target;target.replaceChildren();
+    const tools=document.createElement('div');tools.className='festival-filters';
+    for(const [value,label]of [['all','다가오는 일정'],['today','오늘'],['week','이번 주'],['date','날짜 선택']]){
+      const b=document.createElement('button');b.type='button';b.textContent=label;b.classList.toggle('active',filter===value);b.setAttribute('aria-pressed',String(filter===value));b.onclick=()=>{filter=value;if(value==='date'&&!selectedDate)selectedDate=today();render(target);};tools.append(b);
+    }
+    if(filter==='date'){
+      const input=document.createElement('input');input.type='date';input.min=today();input.value=selectedDate;input.setAttribute('aria-label','행사 날짜');input.onchange=()=>{selectedDate=input.value;render(target);};tools.append(input);
+    }
+    target.append(tools);
+    const note=document.createElement('p');note.className='festival-note';note.textContent='베트남 현지 시간 · 일정은 날씨와 주최 측 사정에 따라 변경될 수 있어요.';target.append(note);
+    const list=upcoming();
+    if(!list.length){const empty=document.createElement('p');empty.className='festival-empty';empty.textContent='이 날짜에 안내할 일정이 없어요.';target.append(empty);}
+    for(const item of list){
+      const e=item.event,article=document.createElement('article');article.className='festival-card';article.id='festival-'+e.id;
+      article.innerHTML=`<div class="festival-date"><b>${esc(dateLabel(item))}</b><small>${esc(e.kind)}</small></div><div class="festival-copy"><button class="festival-title" type="button">${esc(e.title)}</button><p>${esc(e.region)} · ${esc(e.venue)}</p><p>${esc(e.summary)}</p>${e.fee?'<small>'+esc(e.fee)+'</small>':''}<div class="festival-actions"><a href="${esc(map(e))}" target="_blank" rel="noopener noreferrer">위치보기</a><button type="button" data-details>일정 보기</button></div></div><button class="festival-heart" type="button" aria-label="${esc(e.title)} 찜" aria-pressed="${saved.includes(e.id)}">${saved.includes(e.id)?'♥':'♡'}</button>`;
+      article.querySelector('.festival-title').onclick=article.querySelector('[data-details]').onclick=()=>open(e.id);
+      article.querySelector('.festival-heart').onclick=()=>toggle(e.id);target.append(article);
+    }
+  }
+  function open(id){
+    const e=events.find(x=>x.id===id);if(!e)return;
+    lastFocus=document.activeElement;
+    const recurrence=e.weekdays.length===7?'매일':e.weekdays.map(x=>['일','월','화','수','목','금','토'][x]).join('·');
+    const schedule=e.recurring?recurrence+' '+e.times.join(' / '):e.start+' ~ '+e.end;
+    $('modalContent').innerHTML=`<h2 id="dialogTitle">${esc(e.title)}</h2><p class="festival-schedule">${esc(schedule)}</p><p>${esc(e.region)} · ${esc(e.venue)}</p><p>${esc(e.summary)}</p>${e.fee?'<p>'+esc(e.fee)+'</p>':''}<div class="festival-actions"><a href="${esc(map(e))}" target="_blank" rel="noopener noreferrer">위치보기</a><a href="${esc(e.source)}" target="_blank" rel="noopener noreferrer">공식 안내</a><button type="button" class="primary" data-save>${saved.includes(e.id)?'찜 해제':'찜하기'}</button></div><p class="festival-note">현지 시간 기준 · ${esc(e.checked)} 확인<br>출발 전 공식 안내에서 당일 운영 여부를 확인해 주세요.</p>`;
+    $('modalContent').querySelector('[data-save]').onclick=()=>{toggle(id);open(id);};
+    $('modal').classList.remove('hidden');document.body.style.overflow='hidden';$('modal').querySelector('.dialog').focus();
+  }
+  const teaser=document.createElement('button');teaser.type='button';teaser.className='home-festival-line';teaser.hidden=true;
+  document.querySelector('#homePage .hero')?.before(teaser);
+  function refreshTeaser(){
+    const item=upcoming('all')[0];teaser.hidden=!item;if(!item)return;
+    const e=item.event,day=item.date===today()?(e.recurring?'오늘':'진행 중'):item.date===addDays(today(),1)?'내일':item.date.slice(5).replace('-','.');
+    teaser.textContent='📅 '+day+' · '+e.title+(item.time?' '+item.time:'')+' · '+e.region+' ›';
+    teaser.onclick=()=>window.tripfactOpenFestivals(e.id);
+  }
+  const favoriteRender=renderFavoriteGroups;
+  renderFavoriteGroups=function(){
+    favoriteRender();const area=$('listCards');area.querySelector('.festival-favorites')?.remove();
+    const rows=events.filter(e=>saved.includes(e.id));if(!rows.length)return;
+    const section=document.createElement('section');section.className='favorite-section festival-favorites';section.innerHTML='<div class="favorite-heading"><h2>📅 축제·공연</h2></div>';
+    for(const e of rows){const b=document.createElement('button');b.type='button';b.className='festival-saved-row';b.textContent=e.title+' · '+e.region;b.onclick=()=>window.tripfactOpenFestivals(e.id);section.append(b);}
+    area.prepend(section);
+  };
+  window.tripfactFestivals={render,open,next,upcoming};
+  syncCount();refreshTeaser();setInterval(()=>{refreshTeaser();if(root&&document.querySelector('#communityPage[data-view=festivals]:not(.hidden)'))render(root);},60000);
+})();
 
 (() => {
   const names = {spa:'업체정보',explore:'업체정보',home:'홈',market:'쇼핑시세',favs:'내 찜',social:'지금 다낭',events:'핫딜'};
