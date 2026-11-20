@@ -63,7 +63,7 @@ def render_catalog(city,live=True):
     if city!='danang':
         for key in ('tripfact-favs','tripfact-shopping-favs','tripfact-shopping-quantities'):
             html=html.replace("'"+key+"'","'"+key+'-'+city+"'")
-    html=home_metadata(html)
+    html=home_metadata(html,city=city)
     if city!='danang':html=html.replace('다낭 여행자를',CITY_NAMES[city]+' 여행자를').replace('지금 여행중 · 다낭','지금 여행중 · '+CITY_NAMES[city]).replace('/다낭"','/'+CITY_NAMES[city]+'"')
     return html,source,status
 

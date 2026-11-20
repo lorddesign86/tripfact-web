@@ -222,6 +222,7 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 @media(max-width:500px){.community-page{padding:16px 16px 100px;margin-inline:-4px}.community-heading h1{font-size:26px}.community-categories{gap:22px}.community-categories button{font-size:17px}.community-feed-row{padding:18px 0 14px}.community-compose-fab{right:18px}}
 
 .community-post-open{position:relative}.community-post-open:has(.community-photo-thumb){padding-right:110px;min-height:104px}.community-photo-thumb{position:absolute;right:0;top:8px;width:92px;height:92px}.community-photo-thumb img{width:100%;height:100%;object-fit:cover;border-radius:12px}.community-photo-thumb span{position:absolute;right:5px;bottom:5px;padding:3px 7px;border-radius:8px;background:#243c34cc;color:white;font-size:12px}.community-photo-gallery{display:grid;gap:10px;margin:14px 0}.community-photo-gallery img{max-width:100%;width:100%;max-height:760px;object-fit:contain;border-radius:12px}.community-photo-previews{display:flex;gap:8px;overflow-x:auto}.community-photo-previews img{width:76px;height:76px;object-fit:cover;border-radius:10px;flex-shrink:0}
+@media(min-width:900px){.home-community-boards{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr));gap:18px;align-items:start}.home-community-boards>.panel{margin:0!important;min-width:0}}@media(max-width:899px){.home-community-boards{display:grid;grid-template-columns:minmax(0,1fr);gap:14px}}
 
 .home-festival-line{order:2;display:block;width:100%;min-width:0;margin:9px 0;padding:7px 2px;text-align:left;font-size:13px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:var(--green);border-bottom:1px solid var(--line)}
 .home-festival-line[hidden]{display:none!important}.festival-filters{display:flex;gap:6px;flex-wrap:wrap;padding:12px 0}.festival-filters button{border:1px solid var(--line);border-radius:20px;padding:7px 11px;font-size:13px}.festival-filters button.active{background:var(--green);color:white}.festival-filters input{max-width:100%;border:1px solid var(--line);border-radius:8px;padding:6px}.festival-note{font-size:12px;color:var(--muted);line-height:1.6;margin:6px 0 15px}.festival-card{display:grid;grid-template-columns:106px minmax(0,1fr) 30px;gap:12px;padding:20px 0;border-bottom:1px solid var(--line)}.festival-date b{display:block;color:var(--green);font-size:14px}.festival-date small{font-size:11px;color:var(--muted)}.festival-title{font-size:17px;font-weight:750;padding:0;text-align:left}.festival-copy p{margin:5px 0;font-size:13px;overflow-wrap:anywhere}.festival-copy>small{font-size:12px;color:var(--muted)}.festival-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:12px;align-items:center}.festival-actions a,.festival-actions button:not(.primary){color:var(--green);font-size:13px}.festival-heart{font-size:23px;align-self:start;color:var(--green)}.festival-schedule{font-size:20px;font-weight:700;color:var(--green)}.festival-empty{padding:25px 0;color:var(--muted)}.festival-saved-row{display:block;width:100%;text-align:left;padding:13px 0;border-bottom:1px solid var(--line)}
@@ -449,6 +450,11 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 
 .footer-support-links{display:inline-flex!important;align-items:center;justify-content:center;gap:10px;flex-wrap:wrap}.footer-feedback{border:0;background:transparent;color:#63826f;font-size:12px;padding:8px 2px;white-space:nowrap}.footer-feedback:hover{text-decoration:underline}
 #feedbackPage{max-width:820px;margin:auto;padding-bottom:90px}.feedback-heading{display:flex;justify-content:space-between;align-items:center;gap:12px}.feedback-row{border-bottom:1px solid #dfe7d9;padding:14px 0}.feedback-row summary{cursor:pointer;font-size:15px;font-weight:650;line-height:1.5}.feedback-row small{display:block;margin:10px 0;color:#75866d}.feedback-body,.feedback-answer p{white-space:pre-wrap;overflow-wrap:anywhere;line-height:1.7}.feedback-answer{padding:14px;border-radius:12px;background:#edf4e7;margin:14px 0}.feedback-form,.feedback-row form{display:grid;gap:14px;padding:18px;border:1px solid #dce6d5;border-radius:14px;margin:16px 0;background:#fffef9}.feedback-form label,.feedback-row form label{display:grid;gap:7px;font-size:14px}.feedback-form input,.feedback-form textarea,.feedback-form select,.feedback-row form textarea,.feedback-row form select{width:100%;padding:11px;border:1px solid #d5e1cb;border-radius:9px;min-width:0;font:inherit}.feedback-form .feedback-private{display:flex;align-items:center;gap:8px}.feedback-private input{width:18px;height:18px}.feedback-form button,.feedback-row form button{padding:10px 16px;border-radius:9px}
+
+.footer{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:16px!important;text-align:center;padding:28px 0 25px!important;margin-top:28px!important}.footer>span:first-child{display:block;line-height:1.7}.footer .brand-site-address{margin-top:3px}.footer-main-links{display:flex;justify-content:center;align-items:center;flex-wrap:wrap;gap:0}.footer-main-links>*{font-size:12px!important;line-height:1.5!important;padding:0 12px!important;border:0!important;border-radius:0!important;background:none!important;text-decoration:none!important;margin:0!important}.footer-main-links>*+*{border-left:1px solid #d7e1d5!important}.footer-destinations{display:flex;gap:12px;align-items:center;justify-content:center;padding-top:13px;border-top:1px solid var(--line);width:100%}.footer-destinations>small{font-size:11px;color:var(--muted)}.footer .destination-nav{background:none;border:0;padding:0;margin:0;display:flex;gap:7px;justify-content:center}.footer .destination-nav a{padding:5px 10px;font-size:12px}.footer .destination-nav a[aria-current=page]{border-radius:20px}@media(max-width:480px){.footer-main-links>*{font-size:11px!important;padding:0 9px!important}.footer{gap:14px!important}}.header .saved-top{margin-left:auto!important;flex-shrink:0}.header{gap:14px}.header .member-entry{margin-left:0!important;flex-shrink:0}
+
+.article-direct-editor{padding:16px 0;margin:12px 0}.article-direct-editor summary{cursor:pointer;font-weight:700;color:var(--green)}.article-direct-editor form{display:grid;gap:12px;margin-top:15px}.article-direct-editor label{display:grid;gap:5px}.article-direct-editor input,.article-direct-editor textarea,.article-direct-editor select{width:100%;padding:10px;border:1px solid var(--line);border-radius:9px;font:inherit;box-sizing:border-box}
+.footer-main-links{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));width:min(100%,460px)}.footer-main-links>*{min-width:0!important;width:auto!important;white-space:nowrap}.footer-destinations{flex-shrink:0}
 </style></head>
 <body>
 <div class="top"><header class="wrap header"><a class="brand" href="#home" aria-label="지금 다낭중 홈"><span class="brand-icon">🌴</span><div><strong>다낭 지금 다낭중<span style="color:#e6a56b">.</span></strong><small>YOUR LITTLE TRAVEL BUDDY</small></div></a><nav class="desktop-nav" aria-label="주 메뉴"><button data-tab="home" class="active">여행 홈</button><button data-tab="market">쇼핑시세</button><button data-tab="spa">케어 & 뷰티</button><button data-tab="dining">맛집 & 카페</button></nav><button class="saved-top" data-tab="favs">♡ 내 찜 <b id="savedCount">0</b></button></header></div>
@@ -1298,7 +1304,7 @@ function renderAdminRates(container, rates, zones, save) {
     ['홈', id => /^home-[abc]$/.test(id), ['오늘 날씨','환율 · 계산기','쇼핑 배너','광고 A','광고 B','광고 C (선택 노출)','커뮤니티 최신 글','업체 안내']],
     ['쇼핑시세', id => /^shopping-[abc]$/.test(id), ['품목 검색 · 시세 · 계산기','광고 A','광고 B','광고 C (선택 노출)','가격 언급이 많은 품목']],
     ['마사지·네일·이발관', id => /^(massage|nail|barber)-[abc]$/.test(id), ['업종 · 지역 · 검색 필터','광고 A','광고 B','광고 C (선택 노출)','업체 목록']],
-    ['지금 다낭', id => /^social-(all|daily|question|together)-[abc]$/.test(id), ['카테고리 · 지역 필터','광고 A','광고 B','광고 C (선택 노출)','최신 글 목록']],
+    ['커뮤니티', id => /^social-(all|daily|question|together|sharing|festivals)-[abc]$/.test(id), ['카테고리 · 지역 필터','광고 A','광고 B','광고 C (선택 노출)','최신 글 목록']],
     ['핫딜', id => /^events-top-[abc]$/.test(id), ['광고 A','광고 B','광고 C (선택 노출)','카테고리 필터','핫딜 목록']],
     ['내 찜', id => /^favorites-bottom-[abc]$/.test(id), ['찜 목록 · 예상 합계','공유 · 이미지 저장','광고 A','광고 B','광고 C (선택 노출)']],
   ];
@@ -2289,10 +2295,10 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
     renderAdminSupportAccount($('adminSupportAccount'),(name,args)=>checked(client.rpc(name,args)));
     renderAdminFinance($('adminFinance'),(name,args)=>checked(client.rpc(name,args)));
     renderAdminPointUsage($('adminPointUsage'),(name,args)=>checked(client.rpc(name,args)));
-    renderAdminArticles($('adminArticles'), (name,args)=>checked(client.rpc(name,args)), async()=>{
+    renderAdminArticles($('adminArticles'), (name,args)=>checked(client.rpc(name,args)), async(city)=>{
       const current=(await checked(client.auth.getSession())).session;
       if(!current)throw new Error('다시 로그인해 주세요.');
-      const response=await fetch('/api/article-generate',{method:'POST',headers:{Authorization:'Bearer '+current.access_token},signal:AbortSignal.timeout(280000)});
+      const response=await fetch('/api/article-generate?city='+city,{method:'POST',headers:{Authorization:'Bearer '+current.access_token},signal:AbortSignal.timeout(280000)});
       const result=await response.json();
       if(!response.ok)throw new Error(result.state==='not_configured'?'Vercel에 OPENAI_API_KEY·SUPABASE_SERVICE_ROLE_KEY를 등록해 주세요.':'생성하지 못했습니다. 작업 내역과 Vercel 로그를 확인해 주세요.');
       return result;
@@ -3086,7 +3092,7 @@ OTHER DEALINGS IN THE FONT SOFTWARE. */
     const version=++state.version;state.selected=null;more.classList.add('hidden');
     if(!append){state.rows=[];content.textContent='이야기 불러오는 중…';}
     say('');
-    if(state.category==='festivals'){page.dataset.view='festivals';page.querySelector('[data-community-ad]').replaceChildren();window.tripfactFestivals?.render(content);return;}
+    if(state.category==='festivals'){page.dataset.view='festivals';window.tripfactAds?.renderCommunity('festivals');window.tripfactFestivals?.render(content);return;}
     const last=append?state.rows.at(-1):null;
     try {
       const result=await call('tripfact_social_read',{
@@ -3914,7 +3920,7 @@ function renderAdminInsights(container,call) {
 }
 
 (() => {
-  const labels={massage:'마사지 목록 상단',nail:'네일 목록 상단',barber:'이발관 목록 상단',dining:'맛집 목록 상단',cafe:'카페 목록 상단',home:'메인',shopping:'쇼핑시세','events-top':'핫딜 상단','favorites-bottom':'내 찜 하단','social-all':'커뮤니티 · 전체','social-daily':'커뮤니티 · 일상','social-question':'커뮤니티 · 질문','social-together':'커뮤니티 · 같이해요'};
+  const labels={massage:'마사지 목록 상단',nail:'네일 목록 상단',barber:'이발관 목록 상단',dining:'맛집 목록 상단',cafe:'카페 목록 상단',home:'메인',shopping:'쇼핑시세','events-top':'핫딜 상단','favorites-bottom':'내 찜 하단','social-all':'커뮤니티 · 전체','social-daily':'커뮤니티 · 일상','social-question':'커뮤니티 · 질문','social-together':'커뮤니티 · 같이해요','social-sharing':'커뮤니티 · 나눔','social-festivals':'커뮤니티 · 축제·공연'};
   let visibility=Object.fromEntries(Object.keys(labels).map(zone=>[zone,location.protocol==='file:'&&(!window.tripfactCity||window.tripfactCity.code==='danang')]));
   const examples={
     home:[['🌿','코코스파','여행의 피로를 쉬어가는 시간','아로마 관리 · 픽업 혜택','mint'],['🚐','코코픽업','공항에서 숙소까지 편하게','공항 이동 · 한국어 상담','sand']],
@@ -3922,8 +3928,8 @@ function renderAdminInsights(container,call) {
     'events-top':[['💅','코코네일','여행 중 손끝까지 예쁘게','젤네일 프로모션 안내','pink'],['🍜','코코키친','오늘 저녁은 든든하게','베트남 음식 · 세트 메뉴 혜택','sand']],
     'favorites-bottom':[['🎁','코코기프트','찜한 선물, 알뜰하게 준비해요','기념품 · 선물 포장 혜택','pink'],['🛵','코코딜리버리','쇼핑 짐은 숙소로 보내세요','쇼핑 배달 · 이용 안내','mint']],
   };
-  for(const zone of ['social-all','social-daily','social-question','social-together','massage','nail','barber','dining','cafe'])examples[zone]=examples.home.map(row=>[...row]);
-  let capacities=Object.fromEntries(Object.keys(labels).map(zone=>[zone,['massage','nail','barber','dining','cafe'].includes(zone)?3:2]));
+  for(const zone of ['social-all','social-daily','social-question','social-together','social-sharing','social-festivals','massage','nail','barber','dining','cafe'])examples[zone]=examples.home.map(row=>[...row]);
+  let capacities=Object.fromEntries(Object.keys(labels).map(zone=>[zone,['massage','nail','barber','dining','cafe','social-sharing','social-festivals'].includes(zone)?3:2]));
   for(const zone of Object.keys(labels))examples[zone].push(['✨','코코트래블','다낭 여행에 즐거운 혜택을','추가 광고 자리 예시','mint']);
   const previousSlot=adSlot;
   const businessEntry=document.querySelector('.home-business-entry');
@@ -3964,13 +3970,13 @@ function renderAdminInsights(container,call) {
   }
   function renderCommunity(category){
     const anchor=document.querySelector('[data-community-ad]');if(!anchor)return;
-    const key={'':'social-all',daily:'social-daily',question:'social-question',together:'social-together'}[category];
+    const key={'':'social-all',daily:'social-daily',question:'social-question',together:'social-together',sharing:'social-sharing',festivals:'social-festivals'}[category];
     anchor.innerHTML=key?adSlot(key):'';
   }
   const rateZones=Object.entries(labels).flatMap(([id,label])=>['A','B','C'].map(seat=>({id:id+'-'+seat.toLowerCase(),name:label+' '+seat})));
   window.tripfactAds={labels,rateZones,refresh,apply,applyCapacities,renderCommunity};
   apply(visibility);
-  if(currentTab==='social'&&$('communityPage').dataset.view==='feed')renderCommunity(document.querySelector('[data-category-filter][aria-pressed=true]')?.dataset.categoryFilter||'');
+  if(currentTab==='social'&&['feed','festivals'].includes($('communityPage').dataset.view))renderCommunity(document.querySelector('[data-category-filter][aria-pressed=true]')?.dataset.categoryFilter||'');
   refresh();
   setInterval(()=>{if(!document.hidden)refresh();},30000);
   window.addEventListener('focus',refresh);
@@ -4123,7 +4129,7 @@ async function renderAdminSupportAccount(container,call){
 
 (() => {
   if(!document.querySelector('.footer-information')){
-    const link=document.createElement('a');link.href='/information';link.textContent='다낭 여행정보';link.className='footer-information';
+    const link=document.createElement('a');link.href='/information?city='+(window.tripfactCity?.code||'danang');link.textContent=(window.tripfactCity?.name||'다낭')+' 여행정보';link.className='footer-information';
     document.querySelector('.footer').append(link);
   }
   const params=new URLSearchParams(location.search);
@@ -4133,7 +4139,9 @@ async function renderAdminSupportAccount(container,call){
   }
 })();
 
-async function renderAdminArticles(container,call,generate,readArticle){
+async function renderAdminArticles(container,call,generate,readArticle,city=window.tripfactCity?.code||'danang'){
+  const names={danang:'다낭',nhatrang:'나트랑',phuquoc:'푸꾸옥'},baseCall=call;
+  call=(name,args={})=>baseCall(({tripfact_admin_articles:'tripfact_admin_city_articles',tripfact_admin_article_topic:'tripfact_admin_city_article_topic',tripfact_admin_article_status:'tripfact_admin_city_article_status'})[name]||name,{...args,p_city:city});
   container.textContent='자동 글 설정 불러오는 중…';
   try{
     const data=await call('tripfact_admin_articles',{});
@@ -4142,12 +4150,20 @@ async function renderAdminArticles(container,call,generate,readArticle){
       <form data-settings class="article-settings"><label><input type="checkbox" name="enabled"> 자동 생성 켜기</label>
       <label><input type="checkbox" name="publish"> 생성 후 자동 공개</label><label>생성 간격 <select name="days">${[1,2,3,4,5,6,7].map(n=>'<option value="'+n+'">'+n+'일</option>').join('')}</select></label>
       <button class="primary" type="submit">설정 저장</button><button class="vendor-link" type="button" data-generate>지금 한 건 생성</button></form>
-      <p class="vendor-help">자동 실행은 한국시간 오전 10시 · 하루 최대 한 건, 오류 시 같은 날 한 번 재시도 · AI 사용료 별도</p>
+      <p class="vendor-help">자동 실행은 한국시간 오전 10시 · 지역별 하루 최대 한 건, 오류 시 같은 날 한 번 재시도 · AI 사용료 별도</p>
       <p role="status" aria-live="polite"></p><details><summary>추가 글감과 확인 자료 넣기</summary><form data-topic>
       <label>다룰 질문<input name="question" minlength="5" maxlength="150" required placeholder="예: 한시장에서는 가격을 어떤 조건으로 비교하나요?"></label>
       <label>직접 확인한 내용<textarea name="notes" minlength="30" maxlength="10000" rows="5" required placeholder="AI가 참고할 확인된 사실과 기준일을 적어 주세요."></textarea></label>
       <label>공개 출처 링크 · 한 줄에 하나<textarea name="sources" rows="3" required placeholder="https://…"></textarea></label>
       <button class="primary" type="submit">글감 등록</button></form></details><div data-article-list></div><div data-job-list></div>`;
+    const direct=document.createElement('details');direct.className='article-direct-editor';
+    direct.innerHTML='<summary>직접 글 작성</summary><form><label>제목<input name="title" minlength="5" maxlength="120" required></label><label>짧은 소개<textarea name="description" minlength="20" maxlength="240" rows="2" required></textarea></label><label>본문<textarea name="body" minlength="30" maxlength="20000" rows="12" required></textarea></label><label>참고 링크 · 한 줄에 하나<textarea name="sources" rows="2"></textarea></label><label>공개 상태<select name="status"><option value="draft">임시 저장</option><option value="published">공개</option></select></label><button type="submit" class="primary">글 저장</button><p role="status"></p></form>';
+    container.prepend(direct);
+    const form=direct.querySelector('form');form.onsubmit=async event=>{
+      event.preventDefault();if(!form.reportValidity())return;const button=form.querySelector('button'),note=form.querySelector('[role=status]');button.disabled=true;
+      try{await call('tripfact_admin_save_city_article',{p_data:{title:form.elements.title.value,description:form.elements.description.value,body:form.elements.body.value,status:form.elements.status.value,sources:form.elements.sources.value.split('\n').map(x=>x.trim()).filter(Boolean)}});await renderAdminArticles(container,baseCall,generate,readArticle,city);}catch(e){note.textContent=e.message;}finally{button.disabled=false;}
+    };
+    const publicLink=document.createElement('a');publicLink.href='/information?city='+city;publicLink.target='_blank';publicLink.rel='noopener';publicLink.textContent=names[city]+' 여행정보 보기';publicLink.className='vendor-link';container.prepend(publicLink);
     const settings=container.querySelector('[data-settings]'),status=container.querySelector('[role=status]');
     settings.elements.enabled.checked=data.settings.enabled;settings.elements.publish.checked=data.settings.auto_publish;settings.elements.days.value=data.settings.every_days;
     settings.onsubmit=async event=>{
@@ -4158,9 +4174,9 @@ async function renderAdminArticles(container,call,generate,readArticle){
     container.querySelector('[data-generate]').onclick=async event=>{
       const button=event.currentTarget;button.disabled=true;status.textContent='글과 이미지를 생성하고 검증하는 중입니다. 잠시 기다려 주세요.';
       try{
-        const result=await generate();
+        const result=await generate(city);
         const messages={complete:'생성·검증을 완료했습니다.',idle:'오늘 작업이 끝났거나 진행 중입니다. 작업 내역을 확인해 주세요.',skipped:'새로운 확인 자료가 없어 생성하지 않았습니다.',not_configured:'서버 API 연결이 필요합니다.'};
-        await renderAdminArticles(container,call,generate,readArticle);
+        await renderAdminArticles(container,baseCall,generate,readArticle,city);
         container.querySelector('[role=status]').textContent=messages[result.state]||'실행 결과를 확인해 주세요.';
       }catch(error){status.textContent=error.message;}finally{button.disabled=false;}
     };
@@ -4194,20 +4210,20 @@ async function renderAdminArticles(container,call,generate,readArticle){
           }catch{body.textContent='원고를 불러오지 못했습니다. 다시 열어 확인해 주세요.';}
         };row.append(review);
       }
-      if(article.status==='published'){const link=document.createElement('a');link.href='/information/'+article.slug;link.target='_blank';link.rel='noopener';link.textContent='글 보기';row.append(link);}
+      if(article.status==='published'){const link=document.createElement('a');link.href='/information/'+article.slug+'?city='+city;link.target='_blank';link.rel='noopener';link.textContent='글 보기';row.append(link);}
       for(const [label,value]of [['공개','published'],['숨김','hidden']]){
         if(value===article.status)continue;
         const button=document.createElement('button');button.className='vendor-link';button.textContent=label;
         button.onclick=async()=>{
           button.disabled=true;
-          try{await call('tripfact_admin_article_status',{p_id:article.id,p_status:value});await renderAdminArticles(container,call,generate,readArticle);}
+          try{await call('tripfact_admin_article_status',{p_id:article.id,p_status:value});await renderAdminArticles(container,baseCall,generate,readArticle,city);}
           catch(error){status.textContent=error.message;button.disabled=false;}
         };row.append(button);
       }list.append(row);
     }
     const jobs=container.querySelector('[data-job-list]');jobs.innerHTML='<h3>최근 자동 생성 작업</h3>';
     for(const job of data.jobs){const row=document.createElement('p');row.textContent=job.run_day+' · '+({running:'진행 중',complete:'완료',failed:'실패',skipped:'새 자료 없음'})[job.state]+' · '+job.message;jobs.append(row);}
-  }catch{container.textContent='Supabase에 015 여행정보 SQL을 적용한 뒤 확인해 주세요.';}
+  }catch{container.textContent='Supabase에 037 지역별 여행정보 SQL을 적용한 뒤 확인해 주세요.';}
 }
 
 (() => {
@@ -4295,7 +4311,7 @@ async function renderAdminArticles(container,call,generate,readArticle){
   if(brand)brand.href='/'+destination;
   const cityNav=document.createElement('nav');cityNav.className='destination-nav';cityNav.setAttribute('aria-label','여행지 선택');
   for(const city of ['다낭','나트랑','푸꾸옥']){const link=document.createElement('a');link.href='/'+city;link.textContent=city;if(city===destination)link.setAttribute('aria-current','page');cityNav.append(link);}
-  document.querySelector('.top').after(cityNav);
+  document.querySelector('.footer').append(cityNav);
   const oldHero=document.querySelector('.hero .hero-art');
   if(oldHero){const image=picture('hero-art brand-yuyu-hero');image.alt='베트남을 여행하는 유유';oldHero.replaceWith(image);}
   const note=document.querySelector('.travel-note');
@@ -4668,7 +4684,7 @@ async function renderAdminAffiliate(container,call){
 (() => {
   const city=window.tripfactCity||{code:'danang',name:'다낭'};
   if(city.code==='danang')return;
-  document.querySelector('.footer-information')?.remove();
+
   const market=city.code==='nhatrang'?'담시장':'킹콩마트';
   function update(root){
     const walker=document.createTreeWalker(root,NodeFilter.SHOW_TEXT);
@@ -4819,7 +4835,15 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
         await examples();if(isCurrent())await content(section(cityNames[selected]+' 커뮤니티 게시글'),'community',rpc,isCurrent);
       }
       else if(key==='feedback')await renderSiteFeedback(section(cityNames[selected]+' 문의 · 기능요청'),selected,{admin:true,call});
-      else if(key==='articles')await content(section(cityNames[selected]+' 여행정보 게시글'),'articles',rpc,isCurrent);
+      else if(key==='articles'){
+        const client=await tripfactAccount.client();
+        const checked=async result=>{const {data,error}=await result;if(error)throw new Error(error.message);return data;};
+        await renderAdminArticles(section(cityNames[selected]+' 여행정보 작성 · 생성'),call,async city=>{
+          const session=(await checked(client.auth.getSession())).session;if(!session)throw new Error('다시 로그인해 주세요.');
+          const response=await fetch('/api/article-generate?city='+city,{method:'POST',headers:{Authorization:'Bearer '+session.access_token},signal:AbortSignal.timeout(280000)});
+          const data=await response.json();if(!response.ok)throw new Error(data.state==='not_configured'?'서버 AI 연결 설정을 확인해 주세요.':'생성을 완료하지 못했습니다. 작업 내역을 확인해 주세요.');return data;
+        },id=>checked(client.from('tripfact_articles').select('*').eq('id',id).eq('city_slug',selected).single()),selected);
+      }
       else if(key==='data'){
         const p=section(cityNames[selected]+' 시트 · 날씨 연결');const status=message(p,'');
         button('최신 연결 확인',async()=>{status.textContent='확인 중…';try{const response=await fetch('/api/catalog?city='+selected,{cache:'no-store'});if(!response.ok)throw new Error('지역 데이터를 불러오지 못했습니다.');const html=await response.text();const start=html.indexOf('/* SHEET_DATA_START */'),end=html.indexOf('/* SHEET_DATA_END */');const snapshot=JSON.parse(html.slice(start+'/* SHEET_DATA_START */'.length,end));if(snapshot.city!==selected)throw new Error('지역이 일치하지 않습니다.');if(!isCurrent())return;status.textContent='지역: '+cityNames[selected]+' · 품목 '+snapshot.products.length+'개 · 환율 '+snapshot.rates.filter(r=>r.posts>0).length+'건 · 확인 '+snapshot.imported_at+' · '+(response.headers.get('X-Tripfact-Data-Source')==='sheets'?'시트 연결 정상':'저장본 표시 · 서버 시트 연결 확인 필요');}catch(error){if(isCurrent())status.textContent=error.message;}},p);
@@ -4831,5 +4855,18 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
   for(const [key,label]of Object.entries(labels)){const b=button(label,()=>{tab=key;onSelect(key);load();},nav);b.dataset.key=key;}
   select.onchange=()=>{city=select.value;load();};load();
 }
+
+(() => {
+ const footer=document.querySelector('.footer');if(!footer)return;
+ const city=window.tripfactCity?.code||'danang',name=window.tripfactCity?.name||'다낭';
+ const brand=footer.querySelector(':scope>span:first-child');
+ const info=footer.querySelector('.footer-information')||document.createElement('a');info.className='footer-information';info.href='/information?city='+city;info.textContent=name+' 여행정보';
+ const vendor=footer.querySelector('.footer-vendor'),feedback=footer.querySelector('.footer-feedback'),destinations=document.querySelector('.destination-nav');
+ const links=document.createElement('nav');links.className='footer-main-links';links.setAttribute('aria-label','사이트 안내');
+ links.append(info);if(vendor){vendor.textContent='업체센터 · 광고 안내';links.append(vendor);}if(feedback){feedback.textContent='문의 · 기능요청';links.append(feedback);}
+ const bottom=document.createElement('div');bottom.className='footer-destinations';
+ const label=document.createElement('small');label.textContent='다른 여행지';bottom.append(label);if(destinations)bottom.append(destinations);
+ footer.replaceChildren();if(brand)footer.append(brand);footer.append(links,bottom);
+})();
 </script></body>
 </html>
