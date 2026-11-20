@@ -1,6 +1,6 @@
 """Operator edits are layered after sheet publication; city and source IDs never change."""
 from urllib.parse import urlencode,quote
-FIELDS=('adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address')
+FIELDS=('adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden')
 def apply_business_edits(places,rows,city,origin):
  index={r['business_id']:r for r in rows if r.get('city_slug')==city}
  pairs={(p.get('sourceId'),p.get('category'))for p in places}
