@@ -106,17 +106,29 @@ def render_article(article):
         body+='<div class="table"><table>'+''.join('<tr><th>'+escape(r['label'])+'</th><td>'+escape(r['value'])+'</td></tr>'for r in facts['rows'])+'</table></div>'
     if article['sections']:
         body+='<nav class="article-toc" aria-label="글 목차"><b>이 글에서 알아볼 내용</b><ol>'+''.join('<li><a href="#section-'+str(i)+'">'+escape(x['heading'])+'</a></li>'for i,x in enumerate(article['sections']))+'</ol></nav>'
-    body+=''.join('<section id="section-'+str(i)+'"><h2>'+escape(x['heading'])+'</h2>'+''.join('<p>'+escape(v)+'</p>'for v in x['text'].split('\n')if v.strip())+'</section>'for i,x in enumerate(article['sections']))
+    sec_html=[]
+    for i,x in enumerate(article['sections']):
+        part='<section id="section-'+str(i)+'"><h2>'+escape(x['heading'])+'</h2>'
+        if x.get('image_path'):
+            sec_img=image_url(x['image_path']);sec_alt=x.get('image_alt')or(name+' '+x['heading'])
+            part+='<figure style="margin:18px 0"><img src="'+escape(sec_img)+'" alt="'+escape(sec_alt)+'" loading="lazy" style="width:100%;height:auto;border-radius:14px"></figure>'
+        part+=''.join('<p>'+escape(v)+'</p>'for v in x['text'].split('\n')if v.strip())+'</section>'
+        sec_html.append(part)
+    body+=''.join(sec_html)
     if article.get('faqs'):body+='<h2>자주 묻는 질문</h2>'+''.join('<h3>'+escape(x['question'])+'</h3><p>'+escape(x['answer'])+'</p>'for x in article['faqs'])
     if article.get('sources'):body+='<details><summary>참고 자료</summary><ul>'+''.join('<li><a href="'+escape(safe_link(x))+'" target="_blank" rel="noopener noreferrer">'+escape(x)+'</a></li>'for x in article['sources']if safe_link(x))+'</ul></details>'
-    body+='<aside class="article-tools"><b>여행 준비, 지금 확인해 보세요</b><div><a href="/'+name+'?tab=market">쇼핑시세 확인 →</a><a href="/'+name+'">오늘 환율·날씨 →</a><a href="/'+name+'?tab=explore">업체정보 →</a></div></aside></article>'
+    logo_html='<img src="'+escape(image_url(facts['logo_path']))+'" alt="지금 여행중 · '+name+' 로고" style="width:64px;height:64px;border-radius:14px;object-fit:contain;margin-bottom:10px">'if facts.get('logo_path')else''
+    body+='<aside class="article-tools" style="text-align:center;padding:24px 18px">'+logo_html+'<p style="font-weight:700;font-size:1.05rem;margin:0 0 12px">실시간 날씨, 환율, 쇼핑시세, 동행정보는 <a href="/'+name+'" style="text-decoration:underline">지금여행중 '+name+'</a>에서 확인하세요!</p><div><a href="/'+name+'?tab=market">쇼핑시세 확인 →</a><a href="/'+name+'">오늘 환율·날씨 →</a><a href="/'+name+'?tab=explore">업체정보 →</a></div></aside></article>'
     try:
         related=[r for r in public_articles(city=city) if r.get('slug')!=article.get('slug')][:3]
     except Exception:related=[]
     if related:
         body+='<section class="related-articles"><h2>함께 읽으면 좋은 글</h2>'+''.join('<a class="article-link" href="'+escape(article_path(r))+'"><h3>'+escape(r['title'])+'</h3><p>'+escape(r['description'])+'</p></a>'for r in related)+'</section>'
-    structured={'@context':'https://schema.org','@type':'Article','headline':article['title'],'description':article['description'],'datePublished':article.get('published_at')or article['created_at'],'dateModified':article['updated_at'],'mainEntityOfPage':url,'author':{'@type':'Organization','name':'지금 여행중'},'publisher':{'@type':'Organization','name':'지금 여행중'}}
-    if cover:structured['image']=[cover]
+    article_ld={'@context':'https://schema.org','@type':'Article','headline':article['title'],'description':article['description'],'datePublished':article.get('published_at')or article['created_at'],'dateModified':article['updated_at'],'mainEntityOfPage':url,'author':{'@type':'Organization','name':'지금 여행중'},'publisher':{'@type':'Organization','name':'지금 여행중'}}
+    if cover:article_ld['image']=[cover]
+    structured=[article_ld]
+    if article.get('faqs'):
+        structured.append({'@context':'https://schema.org','@type':'FAQPage','mainEntity':[{'@type':'Question','name':x['question'],'acceptedAnswer':{'@type':'Answer','text':x['answer']}}for x in article['faqs']if x.get('question')and x.get('answer')]})
     return render_page(article['title']+' | 지금 여행중 · '+name,article['description'],url,body,cover,structured,city=city)
 
 

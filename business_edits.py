@@ -1,6 +1,6 @@
 """Operator edits are layered after sheet publication; city and source IDs never change."""
 from urllib.parse import urlencode,quote
-FIELDS=('adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden')
+FIELDS=('adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden','serviceMenus')
 def apply_business_edits(places,rows,city,origin):
  index={r['business_id']:r for r in rows if r.get('city_slug')==city}
  pairs={(p.get('sourceId'),p.get('category'))for p in places}
@@ -15,7 +15,7 @@ def apply_business_edits(places,rows,city,origin):
  for p in places:
   row=index.get(p.get('sourceId'))
   if not row:continue
-  patch=row.get('patch')or {};p['editorBase']={k:p.get(k)for k in (*FIELDS,'image','imageThumb','imageOriginal','imageSource','short','loc')}
+  patch=row.get('patch')or {};p['editorBase']={k:p.get(k)for k in (*FIELDS,'menus','price','priceValue','priceBasis','image','imageThumb','imageOriginal','imageSource','short','loc')}
   for k in FIELDS:
    if k in patch:p[k]=patch[k]
   if 'name'in patch:p['short']=patch['name']
@@ -24,6 +24,7 @@ def apply_business_edits(places,rows,city,origin):
   if patch.get('imagePath'):image=origin.rstrip('/')+'/storage/v1/object/public/tripfact-business-photos/'+quote(patch['imagePath'],safe='/')
   if 'imageUrl'in patch or 'imagePath'in patch:
    p.update(image=image,imageThumb=image,imageOriginal=image,imageSource='')
+  apply_service_menus(p)
   p['editVersion']=row.get('version',0)
  return places
 
@@ -36,3 +37,13 @@ def load_business_edits(places,city):
   return apply_business_edits(places,rows,city,database_url())
  except Exception as error:
   print('Business edits unavailable: '+type(error).__name__,flush=True);return places
+
+
+def apply_service_menus(p):
+ import re
+ if not isinstance(p.get('serviceMenus'),list)or not any(m.get('category')==p.get('category')for m in p['serviceMenus']):return
+ menus=[m for m in p['serviceMenus']if m.get('category')==p.get('category')and type(m.get('price'))is int and 0<m['price']<=1000000000]
+ p['menus']=[dict(name=m['name'],low=m['price'],high=m['price'],conditions='',source='',date='')for m in menus]
+ main=next((m for n in (60,90)for m in menus if re.search(r'아로마\s*'+str(n)+r'\s*분',m['name'])),None)if p.get('category')=='마사지'else None
+ main=main or next(iter(menus),None)
+ p.update(priceValue=main['price']if main else None,price=f"{main['price']:,}동"if main else'',priceBasis=main['name']if main else'')
