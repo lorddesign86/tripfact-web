@@ -484,6 +484,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .directory-row>.business-admin-edit{right:67px}.directory-row>.business-admin-hide{position:absolute;right:15px;bottom:7px;padding:2px 4px;color:#936348;font-size:11px}.hidden-business-list>div{display:flex;align-items:center;justify-content:space-between;gap:14px;padding:12px 0;border-bottom:1px solid var(--line)}.business-hidden-list{white-space:nowrap}
 
 .business-main-picker{display:flex;flex-wrap:wrap;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;grid-column:1/-1}.business-main-picker label{position:relative;display:flex;align-items:center;flex-direction:column;gap:4px;width:90px;font-size:11px}.business-main-picker img{width:90px;height:70px;object-fit:contain;border-radius:7px;background:#f4f6f0}.business-main-picker input{width:auto}.business-main-picker label:has(input:checked) img{outline:3px solid var(--green)}
+
+.business-menu-editor{grid-column:1/-1;min-width:0;border:1px solid var(--line);padding:12px;border-radius:10px}.business-menu-input{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 28px;gap:8px;margin:7px 0}.business-menu-input input{min-width:0;width:100%}.business-menu-input button{padding:2px}.business-aroma-price{display:flex;align-items:baseline;gap:10px;color:var(--green);line-height:1.5}.business-aroma-price small{font-size:11px}.business-aroma-price b{font-size:14px}
 </style></head>
 <body>
 <div class="top"><header class="wrap header"><a class="brand" href="#home" aria-label="지금 다낭중 홈"><span class="brand-icon">🌴</span><div><strong>다낭 지금 다낭중<span style="color:#e6a56b">.</span></strong><small>YOUR LITTLE TRAVEL BUDDY</small></div></a><nav class="desktop-nav" aria-label="주 메뉴"><button data-tab="home" class="active">여행 홈</button><button data-tab="market">쇼핑시세</button><button data-tab="spa">케어 & 뷰티</button><button data-tab="dining">맛집 & 카페</button></nav><button class="saved-top" data-tab="favs">♡ 내 찜 <b id="savedCount">0</b></button></header></div>
@@ -2337,7 +2339,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       section('후원 · 포인트 통계','<div id="adminFinance"></div>') +
       section('포인트 사용 내역','<div id="adminPointUsage"></div>') +
       section('배너 광고 집행','<div id="adminCampaigns"></div><hr><h3>클룩 · 파트너스 배너</h3><div id="adminAffiliate"></div>');
-    renderUnifiedAdminWorkspace($('memberContent'),adminCategory,key=>{adminCategory=key;},(name,args)=>checked(client.rpc(name,args)),advertisers);
+
     $('memberContent').querySelectorAll('[data-business]').forEach(control => {
       control.onclick = async () => {
         control.disabled = true;
@@ -2381,6 +2383,7 @@ function installLiveEvents({connect, checked, accountState, showPage, updateMemb
       adjust:async args=>{const result=await checked(client.rpc('tripfact_admin_adjust_points',args));updateMemberHeader();return result;},
       history:userId=>checked(client.rpc('tripfact_admin_point_adjustments',{p_user:userId})),
     });
+    renderUnifiedAdminWorkspace($('memberContent'),adminCategory,key=>{adminCategory=key;},(name,args)=>checked(client.rpc(name,args)),advertisers);
     await pollAlerts();
   }
   let pageVersion = 0;
@@ -4474,6 +4477,40 @@ async function renderAdminArticles(container,call,generate,readArticle,city=wind
 })();
 
 (() => {
+ const valid=value=>Number.isSafeInteger(value)&&value>0&&value<=1000000000;
+ const defaults=['아로마 60분','아로마 90분'];
+ function rows(p){
+  if(Array.isArray(p.serviceMenus)&&p.serviceMenus.some(m=>m.category===p.category))return p.serviceMenus.filter(m=>m.category===p.category);
+  return (p.menus||[]).filter(m=>valid(m.low)&&m.low===m.high).map(m=>({name:m.name,price:m.low,category:p.category}));
+ }
+ function apply(p){
+  if(!Array.isArray(p.serviceMenus)||!p.serviceMenus.some(m=>m.category===p.category))return;
+  const selected=rows(p).filter(m=>valid(m.price));
+  p.menus=selected.map(m=>({name:m.name,low:m.price,high:m.price,conditions:'',source:'',date:''}));
+  const aroma=n=>selected.find(m=>new RegExp('아로마\\s*'+n+'\\s*분').test(m.name));
+  const main=p.category==='마사지'?(aroma(60)||aroma(90)||selected[0]):selected[0];
+  p.priceValue=main?.price??null;p.price=main?fmt(main.price)+'동':'';p.priceBasis=main?.name||'';
+ }
+ function list(p){
+  if(p.category!=='마사지')return '';
+  const available=Array.isArray(p.serviceMenus)&&p.serviceMenus.some(m=>m.category===p.category)?rows(p):(p.menus||[]).map(m=>({name:m.name,price:m.low}));
+  return [60,90].map(n=>{const m=available.find(m=>new RegExp('아로마\\s*'+n+'\\s*분').test(m.name)&&valid(m.price));return m?'<span class="business-aroma-price"><small>아로마 '+n+'분</small><b>'+escapeHTML(fmt(m.price))+'동</b></span>':'';}).join('');
+ }
+ function mount(form,p){
+  const field=document.createElement('fieldset');field.className='business-menu-editor';field.innerHTML='<legend>메뉴 · 가격 (VND)</legend><p class="vendor-help">가격을 입력한 메뉴만 공개합니다.</p><div data-menu-rows></div><button type="button" class="vendor-link" data-add-menu>＋ 메뉴 추가</button>';
+  form.querySelector('.business-edit-actions').before(field);const area=field.querySelector('[data-menu-rows]');
+  let entries=rows(p).map(m=>({...m}));
+  if(p.category==='마사지')for(const name of [...defaults].reverse()){if(!entries.some(m=>m.name.replace(/\s/g,'')===name.replace(/\s/g,'')))entries.unshift({name,price:null,category:p.category});}
+  if(!entries.length)entries=[{name:'',price:null,category:p.category}];
+  function add(m){const row=document.createElement('div');row.className='business-menu-input';row.innerHTML='<input data-menu-name aria-label="메뉴명" maxlength="100" placeholder="메뉴명"><input data-menu-price aria-label="가격 (동)" inputmode="numeric" type="number" min="1" max="1000000000" step="1" placeholder="가격 (동)"><button type="button" aria-label="메뉴 삭제">×</button>';row.querySelector('[data-menu-name]').value=m.name;row.querySelector('[data-menu-price]').value=m.price||'';row.querySelector('button').onclick=()=>row.remove();area.append(row);}
+  entries.forEach(add);field.querySelector('[data-add-menu]').onclick=()=>add({name:'',price:null});
+  function read(){const result=[...area.children].map(row=>({name:row.querySelector('[data-menu-name]').value.trim(),price:row.querySelector('[data-menu-price]').value===''?null:Number(row.querySelector('[data-menu-price]').value),category:p.category})).filter(m=>m.name||m.price!==null);if(result.length>60)throw new Error('메뉴는 최대 60개까지 입력해 주세요.');if(result.some(m=>!m.name||(m.price!==null&&!valid(m.price))))throw new Error('메뉴명과 숫자 가격을 확인해 주세요.');return result.length?result:[{name:'메뉴',price:null,category:p.category}];}
+  const initial=JSON.stringify(read());return {read,changed:()=>JSON.stringify(read())!==initial};
+ }
+ window.tripfactBusinessMenus={apply,list,mount};
+})();
+
+(() => {
   const esc=escapeHTML;
   const placeLabel=p=>p.manualInput?String(p.name).split(/\s*\/\s*/)[0].trim():p.name;
   window.tripfactPlaceLabel=placeLabel;
@@ -4541,7 +4578,7 @@ async function renderAdminArticles(container,call,generate,readArticle,city=wind
     const price=box.querySelector('.price');
     if(['맛집','카페'].includes(p.category)){
       if(price){price.className='business-card-facts';price.innerHTML=(p.rating?'평점 '+Number(p.rating).toFixed(1):'')+(p.reviews?' · 후기 '+Number(p.reviews).toLocaleString('ko-KR')+'개':'');}
-    }else if(price){if(hasPrice(p))price.innerHTML=esc(p.price)+(p.priceBasis?'<small>'+esc(p.priceBasis)+'</small>':'');else price.remove();}
+    }else if(price){const aroma=tripfactBusinessMenus.list(p);if(aroma){price.className='business-aroma-group';price.innerHTML=aroma;}else if(hasPrice(p))price.innerHTML=esc(p.price)+(p.priceBasis?'<small>'+esc(p.priceBasis)+'</small>':'');else price.remove();}
     if(!['맛집','카페'].includes(p.category)&&(p.rating||p.reviews)){const m=document.createElement('div');m.className='business-review-metrics';m.textContent=(p.rating?'평점 '+Number(p.rating).toFixed(1):'')+(p.reviews?' · 후기 '+Number(p.reviews).toLocaleString('ko-KR')+'개':'');box.querySelector('.place-body')?.insertBefore(m,box.querySelector('.place-body .price')||box.querySelector('.place-body .pills'));}
     box.querySelectorAll('.place-review-preview').forEach(node=>node.remove());
     const pills=box.querySelector('.pills');if(pills)pills.innerHTML=summary(p);
@@ -4560,7 +4597,7 @@ async function renderAdminArticles(container,call,generate,readArticle,city=wind
     $('listCards').querySelectorAll('.directory-row').forEach(row=>{
       const open=row.querySelector('.directory-open');const id=open?.getAttribute('onclick')?.match(/openPlace\('([^']+)'\)/)?.[1];const p=places.find(x=>x.id===id);if(!p)return;
       const heart=row.querySelector('.directory-heart');
-      open.innerHTML=`<span class="directory-thumb">${p.image?`<span class="business-photo-fallback" aria-hidden="true">${({마사지:"🌿",네일:"💅",이발관:"💈",맛집:"🍜",카페:"☕"}[p.category])}</span><img src="${esc(p.imageThumb||p.image)}" alt="${esc(p.name)}" loading="lazy" onerror="this.hidden=true">`:'<span aria-hidden="true">'+({마사지:'🌿',네일:'💅',이발관:'💈',맛집:'🍜',카페:'☕'}[p.category])+'</span>'}</span><span class="directory-copy"><small>${placeArea(p)?esc(placeArea(p))+' · ':''}${esc(p.category)}</small><strong>${esc(placeLabel(p))}</strong>${p.rating||p.reviews?`<span class="business-review-metrics">${p.rating?'평점 '+Number(p.rating).toFixed(1):''}${p.reviews?' · 후기 '+Number(p.reviews).toLocaleString('ko-KR')+'개':''}</span>`:''}${!['맛집','카페'].includes(p.category)&&hasPrice(p)?`<span class="directory-price">${esc(p.price)}${p.priceBasis?`<small>${esc(p.priceBasis)}</small>`:''}</span>`:''}<span class="business-list-facts">${summary(p)}</span>${p.adminIntro?'<span class="business-review-summary">'+esc(p.adminIntro)+'</span>':reviewLine(p)}<span class="business-detail-label">업체정보 보기 ›</span></span>`;
+      open.innerHTML=`<span class="directory-thumb">${p.image?`<span class="business-photo-fallback" aria-hidden="true">${({마사지:"🌿",네일:"💅",이발관:"💈",맛집:"🍜",카페:"☕"}[p.category])}</span><img src="${esc(p.imageThumb||p.image)}" alt="${esc(p.name)}" loading="lazy" onerror="this.hidden=true">`:'<span aria-hidden="true">'+({마사지:'🌿',네일:'💅',이발관:'💈',맛집:'🍜',카페:'☕'}[p.category])+'</span>'}</span><span class="directory-copy"><small>${placeArea(p)?esc(placeArea(p))+' · ':''}${esc(p.category)}</small><strong>${esc(placeLabel(p))}</strong>${p.rating||p.reviews?`<span class="business-review-metrics">${p.rating?'평점 '+Number(p.rating).toFixed(1):''}${p.reviews?' · 후기 '+Number(p.reviews).toLocaleString('ko-KR')+'개':''}</span>`:''}${tripfactBusinessMenus.list(p)||(!['맛집','카페'].includes(p.category)&&hasPrice(p)?`<span class="directory-price">${esc(p.price)}${p.priceBasis?`<small>${esc(p.priceBasis)}</small>`:''}</span>`:'')}<span class="business-list-facts">${summary(p)}</span>${p.adminIntro?'<span class="business-review-summary">'+esc(p.adminIntro)+'</span>':reviewLine(p)}<span class="business-detail-label">업체정보 보기 ›</span></span>`;
       row.querySelector('.business-booking')?.remove();
       const food=['맛집','카페'].includes(p.category);const booking=food?p.map:(p.booking||p.kakao||p.reservation);
       if(booking){const a=document.createElement('a');a.className='business-booking';a.href=booking;a.target='_blank';a.rel='noopener noreferrer';a.addEventListener('click',event=>event.stopPropagation());a.textContent=food?'위치보기':'문의&예약';a.setAttribute('aria-label',p.name+' '+a.textContent);row.insertBefore(a,heart);}
@@ -4582,7 +4619,8 @@ async function renderAdminArticles(container,call,generate,readArticle,city=wind
     const p=places.find(x=>x.id===id);if(!p)return;lastFocus=document.activeElement;
     const shown=new Set();const row=(title,value)=>{if(!useful(value))return '';const key=value.replace(/\s+/g,' ').trim();if(shown.has(key))return '';shown.add(key);return `<div class="business-fact"><b>${esc(title)}</b><p>${esc(value)}</p></div>`;};
     let prices='';
-    if(p.manualInput){prices=p.directPrices.filter(m=>m.value||(/\d/.test(m.raw)&&!/확인|문의|미정/.test(m.raw))).map(m=>`<div class="business-menu-row"><b>${esc(m.name)}</b><span>${m.value?money(m.value):esc(m.raw)}</span></div>`).join('');}
+    if(Array.isArray(p.serviceMenus)&&p.serviceMenus.some(m=>m.category===p.category)){prices=(p.menus||[]).filter(m=>Number.isFinite(m.low)&&m.low>0).map(m=>`<div class="business-menu-row"><b>${esc(m.name)}</b><span>${money(m.low)}</span></div>`).join('');}
+    else if(p.manualInput){prices=p.directPrices.filter(m=>m.value||(/\d/.test(m.raw)&&!/확인|문의|미정/.test(m.raw))).map(m=>`<div class="business-menu-row"><b>${esc(m.name)}</b><span>${m.value?money(m.value):esc(m.raw)}</span></div>`).join('');}
     else prices=(p.menus||[]).map(m=>`<div class="business-menu-row"><b>${esc(m.name)}</b><span>${m.low===m.high?money(m.low):money(m.low)+' ~ '+money(m.high)}</span></div>`).join('');
     const four=/있음|가능|제공/.test(p.fourHands||'')&&!/없음|미제공|불가/.test(p.fourHands||'');
     $('modalContent').innerHTML=`<h2 id="dialogTitle">${esc(placeLabel(p))}</h2><p>${esc(placeArea(p))} ${esc(p.address||'')}</p>${p.image?`<img class="business-main-photo" src="${esc(p.image)}" alt="${esc(p.name)} 대표사진" onload="this.style.maxWidth=Math.min(this.naturalWidth,this.parentElement.clientWidth)+'px'" onerror="this.hidden=true">`:''}<div class="business-links">${link(p.map,'지도')}${link(p.booking||p.kakao||p.reservation,'문의&예약')}${link(p.website,'홈페이지')}</div>
@@ -4858,8 +4896,8 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
   const select=shell.querySelector('[data-city]'),nav=shell.querySelector('nav'),area=shell.querySelector('[data-regional]'),common=shell.querySelector('[data-common]'),scope=shell.querySelector('[data-scope]');
   select.value=city;
   const labels={stats:'통계 · 가격 제보',support:'후원 · 포인트',members:'회원 관리',ads:'광고 관리',community:'커뮤니티 관리',articles:'여행정보 관리',seo:'SEO · 공유 설정',data:'시트 · 날씨 연결',feedback:'문의 · 기능요청',spam:'스팸 · 차단 공통',automation:'자동생성 설정'};
-  const commonSections={support:[4,6,12,13],members:[5,7],spam:[3],automation:[2]};
-  const commonPanels={};for(const [key,indexes] of Object.entries(commonSections)){const panel=document.createElement('div');panel.hidden=true;for(const index of indexes)if(original[index])panel.append(original[index]);commonPanels[key]=panel;common.append(panel);}
+  const commonSections={support:['adminSupportAccount','adminCredits','adminFinance','adminPointUsage'],members:['adminMembers','adminMemberCreate'],spam:['adminSocial'],automation:['adminArticles']};
+  const commonPanels={};for(const [key,indexes] of Object.entries(commonSections)){const panel=document.createElement('div');panel.hidden=true;for(const id of indexes){const node=original.find(n=>n.id===id||n.querySelector('#'+id));if(node&&!panel.contains(node))panel.append(node);}if(key==='support'&&original[6]&&!panel.contains(original[6]))panel.append(original[6]);if(key==='members'&&original[5]&&!panel.contains(original[5]))panel.prepend(original[5]);commonPanels[key]=panel;common.append(panel);}
   function section(title){const node=document.createElement('section');node.className='panel';const h=document.createElement('h2');h.textContent=title;node.append(h);area.append(node);return node;}
   function message(parent,text){const node=document.createElement('p');node.setAttribute('role','status');node.textContent=text;parent.append(node);return node;}
   const number=value=>Number(value||0).toLocaleString('ko-KR');
@@ -4984,7 +5022,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
 
 (() => {
   const city=window.tripfactCity?.code||'danang',esc=escapeHTML;
-  const fields=['adminIntro','adminTags','menuSummary','hours','map','booking','image','imageThumb','imageOriginal','imageSource','name','short','region','loc','address','adminHidden'];
+  const fields=['adminIntro','adminTags','menuSummary','hours','map','booking','image','imageThumb','imageOriginal','imageSource','name','short','region','loc','address','adminHidden','serviceMenus','menus','price','priceValue','priceBasis'];
   const hiddenPool=new Map((danangSheet.hiddenPlaces||[]).map(p=>[p.id,p]));
   const bases=new Map([...places,...hiddenPool.values()].map(p=>[p.id,{...p,...(p.editorBase||{})}]));
   let admin=false,client=null,refreshing=false,modalId=null,edits=new Map(),identityVersion=0;
@@ -5003,10 +5041,11 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
     for(const p of places){
       const base=bases.get(p.id);for(const key of fields){if(key in base)p[key]=base[key];else delete p[key];}
       const record=edits.get(p.sourceId);if(!record)continue;
-      for(const k of ['adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden'])if(k in record.patch)p[k]=record.patch[k];
+      for(const k of ['adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden','serviceMenus'])if(k in record.patch)p[k]=record.patch[k];
       const patch=record.patch;if('name'in patch)p.short=p.name;if('region'in patch)p.loc=p.region;placeRegions[p.id]=p.region;
       if('imagePath'in patch||'imageUrl'in patch){const url=patch.imagePath?originUrl(patch.imagePath):patch.imageUrl||'';p.image=p.imageThumb=p.imageOriginal=url;p.imageSource='';}
     }
+    for(const p of places)window.tripfactBusinessMenus?.apply(p);
     for(const p of places)if(!p.image){const photo=p.gallery?.find(v=>v.url?.startsWith('https://'));if(photo)p.image=p.imageThumb=p.imageOriginal=photo.url;}
     for(let i=places.length-1;i>=0;i--){const p=places[i];if(p.adminHidden===true){hiddenPool.set(p.id,p);places.splice(i,1);}else hiddenPool.delete(p.id);}
   }
@@ -5059,10 +5098,10 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
   }
   async function photo(file){
     if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024)throw new Error('JPG·PNG·WebP 사진을 10MB 이하로 선택해 주세요.');
-    const bitmap=await createImageBitmap(file),scale=Math.min(1,1600/bitmap.width,1600/bitmap.height);
-    const canvas=document.createElement('canvas');canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close();
+    let bitmap;try{bitmap=await createImageBitmap(file);}catch{bitmap=await new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{URL.revokeObjectURL(url);resolve(img);};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('이미지 파일을 읽지 못했습니다. JPG·PNG·WebP로 다시 선택해 주세요.'));};img.src=url;});}const scale=Math.min(1,1600/bitmap.width,1600/bitmap.height);
+    const canvas=document.createElement('canvas');canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
     const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.9));if(!blob||blob.size>4194304)throw new Error('사진 크기를 줄여 다시 선택해 주세요.');
-    const path=city+'/'+crypto.randomUUID()+'.webp';await checked(client.storage.from('tripfact-business-photos').upload(path,blob,{contentType:'image/webp',upsert:false}));return path;
+    const path=city+'/'+crypto.randomUUID()+'.webp';try{await checked(client.storage.from('tripfact-business-photos').upload(path,blob,{contentType:'image/webp',upsert:false}));}catch(error){throw new Error('대표사진 업로드 실패: '+error.message+' · 관리자 권한과 044 업체 수정 설정 SQL을 확인해 주세요.');}return path;
   }
   async function edit(id){
     if(!admin)return;const p=places.find(p=>p.id===id);if(!p)return;
@@ -5083,7 +5122,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
       <label>위치보기 링크<input type="url" name="map" value="${esc(initial.map)}" placeholder="https://…"></label>
       <label>문의·예약 링크<input type="url" name="booking" value="${esc(initial.booking)}" placeholder="https://…"></label>
       <div class="business-edit-actions"><button class="primary" type="submit">저장</button><button type="button" class="vendor-link" data-cancel>취소</button>${old&&!p.isOperatorBusiness?'<button type="button" class="vendor-link" data-reset>시트 내용으로 되돌리기</button>':''}</div><p role="status" aria-live="polite"></p></form>`;
-    const form=$('modalContent').querySelector('form'),status=form.querySelector('[role=status]'),preview=form.querySelector('img');let previewUrl=null;
+    const form=$('modalContent').querySelector('form'),status=form.querySelector('[role=status]'),preview=form.querySelector('.business-edit-preview');const menuEditor=tripfactBusinessMenus.mount(form,p);let previewUrl=null;
     form.elements.photo.onchange=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);const f=form.elements.photo.files[0];if(f){previewUrl=URL.createObjectURL(f);preview.src=previewUrl;preview.hidden=false;}};
     const cleanup=()=>{if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}};
     form.querySelector('[data-cancel]').onclick=()=>{cleanup();openPlace(id);};
@@ -5093,6 +5132,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
         const patch={};
         if(!reset){for(const k of Object.keys(initial))if(form.elements[k].value!==initial[k])patch[k]=form.elements[k].value.trim();
           if('adminTags'in patch){patch.adminTags=[...new Set(patch.adminTags.split(/[#,\n]/).map(s=>s.trim()).filter(Boolean))];if(patch.adminTags.length>12||patch.adminTags.some(t=>t.length>40))throw new Error('해시태그는 40자 이하로 최대 12개까지 입력해 주세요.');}
+          if(menuEditor.changed())patch.serviceMenus=[...(p.serviceMenus||[]).filter(m=>m.category!==p.category),...menuEditor.read()];
           const selected=form.querySelector('[name=galleryPhoto]:checked')?.value;if(selected&&selected!==originalPhoto){patch.imageUrl=selected;patch.imagePath='';}
           const file=form.elements.photo.files[0];if(file){uploaded=await photo(file);patch.imagePath=uploaded;patch.imageUrl='';}
           if(!Object.keys(patch).length){status.textContent='수정한 내용이 없습니다.';return;}
