@@ -4980,19 +4980,19 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
     const status=message(parent,'불러오는 중…'),list=document.createElement('div');parent.append(list);let offset=0;
     const pager=document.createElement('div');pager.className='rate-pages';parent.append(pager);
     const prev=button('이전',()=>{offset=Math.max(0,offset-50);load();},pager),next=button('다음',()=>{offset+=50;load();},pager);
-    async function ads(selected,rpc,isCurrent){
-    const main=section(cityNames[selected]+' 광고 관리');
-    await renderAdminAdStudio(main,selected,rpc,call,isCurrent);
-    if(!isCurrent())return;
-    const details=document.createElement('details');details.className='ad-studio-advanced';details.innerHTML='<summary>노출 ON/OFF · 단가 · 파트너스 · 핫딜 관리</summary>';area.append(details);let initialized=false;
-    details.ontoggle=async()=>{if(!details.open||initialized)return;initialized=true;const before=new Set(area.children);await legacyAds(selected,rpc,isCurrent);if(!isCurrent())return;for(const node of [...area.children])if(!before.has(node))details.append(node);};
-  }
   async function load(){status.textContent='불러오는 중…';prev.disabled=next.disabled=true;try{
       const rows=kind==='community'?await call('tripfact_admin_community',{p_city:targetCity,p_category:category.value,p_offset:offset}):await rpc('content',{kind,offset});if(!isCurrent())return;list.replaceChildren();
       for(const row of rows){const line=document.createElement('div');line.className='city-content-row';const text=document.createElement('div');const title=document.createElement('b');title.textContent=row.title||'(제목 없음)';const sub=document.createElement('small');sub.textContent=(row.business_name?row.business_name+' · ':'')+new Date(row.created_at).toLocaleString('ko-KR')+' · '+(row.status|| (row.hidden?'숨김':'공개'));const body=document.createElement('p');body.textContent=row.body;if(row.category)sub.textContent=({daily:'일상',question:'질문',together:'같이해요',sharing:'나눔'}[row.category]||row.category)+' · '+sub.textContent;text.append(title,sub,body);line.append(text);
         const edit=button(kind==='reports'?(row.hidden?'승인':'제외'):(row.hidden?'공개':'숨김'),async()=>{edit.disabled=true;try{await rpc('moderate',{kind,id:row.id,hidden:!row.hidden});if(isCurrent())await load();}catch(error){status.textContent=error.message;}finally{edit.disabled=false;}},line);if(kind==='community')button('삭제',async()=>{if(!confirm('이 글을 삭제할까요?'))return;try{await call('tripfact_admin_community',{p_city:targetCity,p_action:'delete',p_id:row.id});if(isCurrent())await load();}catch(error){status.textContent=error.message;}},line);list.append(line);}
       status.textContent=rows.length?'':'등록된 자료가 없습니다.';prev.disabled=offset===0;next.disabled=rows.length<50;
     }catch(error){if(isCurrent())status.textContent=error.message;}}if(category)category.onchange=()=>{offset=0;load();};await load();
+  }
+  async function renderAdsWorkspace(selected,rpc,isCurrent){
+    const main=section(cityNames[selected]+' 광고 관리');
+    await renderAdminAdStudio(main,selected,rpc,call,isCurrent);
+    if(!isCurrent())return;
+    const details=document.createElement('details');details.className='ad-studio-advanced';details.innerHTML='<summary>노출 ON/OFF · 단가 · 파트너스 · 핫딜 관리</summary>';area.append(details);let initialized=false;
+    details.ontoggle=async()=>{if(!details.open||initialized)return;initialized=true;const before=new Set(area.children);await legacyAds(selected,rpc,isCurrent);if(!isCurrent())return;for(const node of [...area.children])if(!before.has(node))details.append(node);};
   }
   async function legacyAds(selected,rpc,isCurrent){
     const panel=section(cityNames[selected]+' 광고 노출'),status=message(panel,'불러오는 중…');
@@ -5053,7 +5053,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
           const table=document.createElement('div');table.className='insight-table';table.innerHTML='<table><thead><tr><th>날짜</th><th>조회</th><th>클릭</th></tr></thead><tbody>'+d.days.map(r=>'<tr><td>'+escapeHTML(r.day)+'</td><td>'+number(r.views)+'</td><td>'+number(r.clicks)+'</td></tr>').join('')+'</tbody></table>';stats.append(table);status.textContent='한국시간 기준 · 방문 세션은 실제 사람 수와 다릅니다. 후원 금액과 전체 포인트 수익은 후원·포인트 메뉴에서 확인하세요.';
         }catch(error){if(isCurrent())status.textContent=error.message;}}
         days.onchange=show;button('새로고침',show,tools);show();await content(section(cityNames[selected]+' 구매가격 제보'),'reports',rpc,isCurrent);
-      }else if(key==='ads')await ads(selected,rpc,isCurrent);
+      }else if(key==='ads')await renderAdsWorkspace(selected,rpc,isCurrent);
       else if(key==='community'){
         const panel=section(cityNames[selected]+' 예시 글 관리'),status=message(panel,'불러오는 중…');
         async function examples(action='list'){try{const d=await call('tripfact_admin_examples',{p_city:selected,p_action:action});if(isCurrent())status.textContent='전체 '+d.total+'개 · 공개 '+d.visible+'개 · 숨김 '+d.hidden+'개';}catch(e){if(isCurrent())status.textContent=e.message;}}
@@ -5077,7 +5077,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
         const link=document.createElement('a');link.href='/api/weather?city='+selected+'&area=center';link.target='_blank';link.rel='noopener';link.textContent='이 지역 날씨 연결 확인';link.className='vendor-link';p.append(link);
         message(p,'쇼핑·환율 원본은 구글시트에서 수정합니다. 사이트는 지역별 탭을 읽으며 서버 캐시는 최대 약 5~10분입니다.');
       }
-    }catch(error){if(isCurrent())message(area,error.message+' · 030 지역 통합 관리자 SQL 적용 여부를 확인해 주세요.');}
+    }catch(error){if(isCurrent())message(area,error.message+(error.code==='PGRST202'?' · 관리자 설정 SQL 적용 여부를 확인해 주세요.':''));}
   }
   for(const [key,label]of Object.entries(labels)){const b=button(label,()=>{tab=key;onSelect(key);load();},nav);b.dataset.key=key;}
   select.onchange=()=>{city=select.value;load();};load();
