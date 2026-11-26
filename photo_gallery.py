@@ -99,6 +99,9 @@ def attach_photo_galleries(places,tables):
    if photo['kind']=='general'and canonical(photo['url'])==primary:continue
    entry={k:v for k,v in photo.items()if k not in ('_hash','kind','order')}
    place['menuImages'if photo['kind']=='menu'else'gallery'].append(entry)
+  menu_url=str(place.get('menuUrl',''))
+  if menu_url.startswith('https://')and __import__('re').search(r'\.(?:jpe?g|png|webp)(?:[?#]|$)',menu_url,__import__('re').I)and not any(x['url']==menu_url for x in place['menuImages']):
+   place['menuImages'].append({'url':menu_url,'alt':'메뉴판·가격표'})
  return places
 
 

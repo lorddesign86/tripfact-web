@@ -508,6 +508,8 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .business-main-picker{display:flex;flex-wrap:wrap;gap:10px;border:1px solid var(--line);border-radius:10px;padding:12px;grid-column:1/-1}.business-main-picker label{position:relative;display:flex;align-items:center;flex-direction:column;gap:4px;width:90px;font-size:11px}.business-main-picker img{width:90px;height:70px;object-fit:contain;border-radius:7px;background:#f4f6f0}.business-main-picker input{width:auto}.business-main-picker label:has(input:checked) img{outline:3px solid var(--green)}
 
 .business-menu-editor{grid-column:1/-1;min-width:0;border:1px solid var(--line);padding:12px;border-radius:10px}.business-menu-input{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 28px;gap:8px;margin:7px 0}.business-menu-input input{min-width:0;width:100%}.business-menu-input button{padding:2px}.business-aroma-price{display:flex;align-items:baseline;gap:10px;color:var(--green);line-height:1.5}.business-aroma-price small{font-size:11px}.business-aroma-price b{font-size:14px}
+
+.business-menu-photo-editor{margin:16px 0;border:1px solid #dbe5d7;border-radius:12px;padding:14px;min-width:0}.business-menu-photo-editor>small{display:block;color:#778577;font-size:12px;line-height:1.5}.business-menu-photo-editor details{margin:10px 0}.business-menu-photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.business-menu-photo-grid>div{min-width:0;border:1px solid #e0e8db;padding:6px;border-radius:8px}.business-menu-photo-grid img{width:100%;height:110px;object-fit:contain;background:#f6f8f2}.business-menu-photo-grid small{display:block}.business-menu-photo-grid button{margin-top:4px}@media(max-width:500px){.business-menu-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 </style></head>
 <body>
 <div class="top"><header class="wrap header"><a class="brand" href="#home" aria-label="지금 다낭중 홈"><span class="brand-icon">🌴</span><div><strong>다낭 지금 다낭중<span style="color:#e6a56b">.</span></strong><small>YOUR LITTLE TRAVEL BUDDY</small></div></a><nav class="desktop-nav" aria-label="주 메뉴"><button data-tab="home" class="active">여행 홈</button><button data-tab="market">쇼핑시세</button><button data-tab="spa">케어 & 뷰티</button><button data-tab="dining">맛집 & 카페</button></nav><button class="saved-top" data-tab="favs">♡ 내 찜 <b id="savedCount">0</b></button></header></div>
@@ -4761,7 +4763,7 @@ async function renderAdminArticles(container,call,generate,readArticle,city=wind
     const credit=document.createElement('div');credit.className='place-gallery-credit';
     controls.append(prev,count,next);root.append(track,controls,credit);parent.append(root);
     let index=0,items=[],destroyed=false;
-    function update(){credit.replaceChildren();const photo=items[index]?.photo;if(photo?.credit){const text=document.createElement('span');text.textContent=photo.credit;credit.append(text);if(photo.sourceUrl){const a=document.createElement('a');a.href=photo.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent='출처';credit.append(a);}}credit.hidden=!photo?.credit;count.textContent=(index+1)+' / '+items.length;prev.disabled=index===0;next.disabled=index>=items.length-1;controls.hidden=items.length<=1;}
+    function update(){credit.replaceChildren();const photo=items[index]?.photo;if(photo?.credit){const text=document.createElement('span');text.textContent=photo.credit;credit.append(text);if(photo.sourceUrl){const a=document.createElement('a');a.href=photo.sourceUrl;a.target='_blank';a.rel='noopener noreferrer';a.textContent='출처';credit.append(a);}}if(zoom&&photo?.url){const original=document.createElement('a');original.href=photo.url;original.target='_blank';original.rel='noopener noreferrer';original.textContent='원본 크기로 보기 ↗';credit.append(original);}credit.hidden=!photo?.credit&&!zoom;count.textContent=(index+1)+' / '+items.length;prev.disabled=index===0;next.disabled=index>=items.length-1;controls.hidden=items.length<=1;}
     function load(i){const item=items[i];if(!item||item.img.dataset.photoLoaded)return;item.img.dataset.photoLoaded='1';if(!item.photo.main||!mainImage)item.img.src=item.photo.url;}
     function go(i,smooth=true){if(destroyed||!items.length)return;index=Math.max(0,Math.min(i,items.length-1));load(index);if(index+1<items.length)load(index+1);track.scrollTo({left:index*track.clientWidth,behavior:smooth?'smooth':'auto'});update();}
     function fail(item){
@@ -4808,7 +4810,7 @@ async function renderAdminArticles(container,call,generate,readArticle,city=wind
       if(controller.root.isConnected)holder.replaceWith(controller.root);
     }
     const menus=unique(place.menuImages||[]);
-    if(menus.length){const details=document.createElement('details');details.className='place-menu-photos';const title=document.createElement('summary');title.textContent='가격표·메뉴 이미지';details.append(title);host.querySelector('.business-links')?.after(details);let initialized=false;details.addEventListener('toggle',()=>{if(!details.open||initialized)return;initialized=true;for(const p of menus){const button=document.createElement('button');button.type='button';button.className='place-menu-image';button.setAttribute('aria-label','메뉴 이미지 확대');const img=document.createElement('img');img.alt='가격표·메뉴';img.loading='lazy';img.onload=()=>imageSize(img);img.onerror=()=>{button.remove();if(!details.querySelector('button'))details.remove();};img.src=p.url;button.append(img);button.onclick=()=>openZoom(menus,menus.indexOf(p),button);details.append(button);}});}
+    if(menus.length){const details=document.createElement('details');details.className='place-menu-photos';const title=document.createElement('summary');title.textContent='메뉴판 · 가격표 ('+menus.length+'장)';details.append(title);host.querySelector('.business-links')?.after(details);let initialized=false;details.addEventListener('toggle',()=>{if(!details.open||initialized)return;initialized=true;for(const p of menus){const button=document.createElement('button');button.type='button';button.className='place-menu-image';button.setAttribute('aria-label','메뉴 이미지 확대');const img=document.createElement('img');img.alt='가격표·메뉴';img.loading='lazy';img.onload=()=>imageSize(img);img.onerror=()=>{button.remove();if(!details.querySelector('button'))details.remove();};img.src=p.url;button.append(img);button.onclick=()=>openZoom(menus,menus.indexOf(p),button);details.append(button);}});}
     return ()=>controller?.destroy();
   }
   const open=openPlace;openPlace=function(id){closeZoom?.();release();open(id);const p=places.find(p=>p.id===id);if(p)release=mount(p,$('modalContent'));};
@@ -5167,8 +5169,26 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
 })();
 
 (() => {
+ const validUrl=value=>{try{const u=new URL(value);return u.protocol==='https:'&&!u.username&&!u.password?u.href:'';}catch{return '';}};
+ function resolve(items,publicUrl){return (items||[]).map(x=>({url:x.path?publicUrl(x.path):validUrl(x.url),alt:'메뉴판·가격표'})).filter(x=>x.url);}
+ function mount(form,p,upload,publicUrl){
+  const field=document.createElement('fieldset');field.className='business-menu-photo-editor';field.innerHTML='<legend>메뉴판 · 가격표 이미지</legend><label>이미지 첨부<input type="file" data-menu-files multiple accept="image/jpeg,image/png,image/webp"></label><small>최대 10장 · 장당 10MB · 글자가 보이도록 긴 변 최대 3200px로 저장합니다.</small><details><summary>이미지 주소로 추가</summary><label>공개 이미지 주소<input type="url" data-menu-url placeholder="https://…"></label><button type="button" class="vendor-link" data-add-menu-url>주소 추가</button></details><div class="business-menu-photo-grid"></div><p data-menu-photo-status role="status"></p>';
+  form.querySelector('.business-edit-actions').before(field);
+  const status=field.querySelector('[data-menu-photo-status]'),grid=field.querySelector('.business-menu-photo-grid'),urlInput=field.querySelector('[data-menu-url]'),urls=[];
+  let entries=Array.isArray(p.menuPhotos)?p.menuPhotos.map(x=>({...x})):(p.menuImages||[]).map(x=>({url:x.url}));entries=entries.filter(x=>x.path||validUrl(x.url));let dirty=false;
+  function source(x){return x.preview|| (x.path?publicUrl(x.path):validUrl(x.url));}
+  function draw(){grid.replaceChildren();entries.forEach((x,i)=>{const card=document.createElement('div'),img=new Image(),remove=document.createElement('button'),label=document.createElement('small');img.src=source(x);img.alt='메뉴판 '+(i+1);img.loading='lazy';label.textContent='메뉴판 '+(i+1);remove.type='button';remove.className='vendor-link';remove.textContent='삭제';remove.onclick=()=>{entries.splice(i,1);dirty=true;draw();};card.append(img,label,remove);grid.append(card);});}
+  function addUrl(){if(!urlInput.value.trim())return;const url=validUrl(urlInput.value.trim());if(!url)throw new Error('https로 시작하는 공개 이미지 주소를 입력해 주세요.');if(entries.some(x=>x.url===url)){urlInput.value='';return;}if(entries.length>=10)throw new Error('메뉴판은 최대 10장까지 등록할 수 있습니다.');entries.push({url});urlInput.value='';dirty=true;draw();}
+  field.querySelector('[data-add-menu-url]').onclick=()=>{try{addUrl();status.textContent='';}catch(e){status.textContent=e.message;}};
+  field.querySelector('[data-menu-files]').onchange=e=>{const files=[...e.target.files];if(entries.length+files.length>10){status.textContent='메뉴판은 최대 10장까지 등록할 수 있습니다.';e.target.value='';return;}if(files.some(f=>!['image/jpeg','image/png','image/webp'].includes(f.type)||f.size>10485760)){status.textContent='10MB 이하 JPG·PNG·WebP 파일을 선택해 주세요.';e.target.value='';return;}for(const file of files){const preview=URL.createObjectURL(file);urls.push(preview);entries.push({file,preview});}dirty=dirty||files.length>0;status.textContent='';e.target.value='';draw();};
+  draw();return {changed:()=>dirty||!!urlInput.value.trim(),async read(){addUrl();const result=[];for(const entry of [...entries]){if(entry.file)result.push({path:await upload(entry.file)});else result.push(entry.path?{path:entry.path}:{url:entry.url});}return result;},dispose(){urls.forEach(u=>URL.revokeObjectURL(u));}};
+ }
+ window.tripfactMenuPhotos={mount,resolve};
+})();
+
+(() => {
   const city=window.tripfactCity?.code||'danang',esc=escapeHTML;
-  const fields=['adminIntro','adminTags','menuSummary','hours','map','booking','image','imageThumb','imageOriginal','imageSource','name','short','region','loc','address','adminHidden','serviceMenus','menus','price','priceValue','priceBasis'];
+  const fields=['adminIntro','adminTags','menuSummary','hours','map','booking','image','imageThumb','imageOriginal','imageSource','name','short','region','loc','address','adminHidden','menuPhotos','menuImages','serviceMenus','menus','price','priceValue','priceBasis'];
   const hiddenPool=new Map((danangSheet.hiddenPlaces||[]).map(p=>[p.id,p]));
   const bases=new Map([...places,...hiddenPool.values()].map(p=>[p.id,{...p,...(p.editorBase||{})}]));
   let admin=false,client=null,refreshing=false,modalId=null,edits=new Map(),identityVersion=0;
@@ -5187,7 +5207,8 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
     for(const p of places){
       const base=bases.get(p.id);for(const key of fields){if(key in base)p[key]=base[key];else delete p[key];}
       const record=edits.get(p.sourceId);if(!record)continue;
-      for(const k of ['adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden','serviceMenus'])if(k in record.patch)p[k]=record.patch[k];
+      for(const k of ['adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden','menuPhotos','serviceMenus'])if(k in record.patch)p[k]=record.patch[k];
+      if('menuPhotos'in record.patch)p.menuImages=tripfactMenuPhotos.resolve(record.patch.menuPhotos,originUrl);
       const patch=record.patch;if('name'in patch)p.short=p.name;if('region'in patch)p.loc=p.region;placeRegions[p.id]=p.region;
       if('imagePath'in patch||'imageUrl'in patch){const url=patch.imagePath?originUrl(patch.imagePath):patch.imageUrl||'';p.image=p.imageThumb=p.imageOriginal=url;p.imageSource='';}
     }
@@ -5242,12 +5263,12 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
       admin=allowed===true;edits=new Map(rows.filter(r=>r.city_slug===city).map(r=>[r.business_id,r]));merge();redraw();decorate();
     }catch(error){if(version===identityVersion){console.warn('Business editor refresh:',error.message);admin=false;decorate();}}finally{refreshing=false;}
   }
-  async function photo(file){
+  async function photo(file,menu=false){
     if(!['image/jpeg','image/png','image/webp'].includes(file.type)||file.size>10*1024*1024)throw new Error('JPG·PNG·WebP 사진을 10MB 이하로 선택해 주세요.');
-    let bitmap;try{bitmap=await createImageBitmap(file);}catch{bitmap=await new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{URL.revokeObjectURL(url);resolve(img);};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('이미지 파일을 읽지 못했습니다. JPG·PNG·WebP로 다시 선택해 주세요.'));};img.src=url;});}const scale=Math.min(1,1600/bitmap.width,1600/bitmap.height);
+    let bitmap;try{bitmap=await createImageBitmap(file);}catch{bitmap=await new Promise((resolve,reject)=>{const img=new Image(),url=URL.createObjectURL(file);img.onload=()=>{URL.revokeObjectURL(url);resolve(img);};img.onerror=()=>{URL.revokeObjectURL(url);reject(new Error('이미지 파일을 읽지 못했습니다. JPG·PNG·WebP로 다시 선택해 주세요.'));};img.src=url;});}const scale=Math.min(1,(menu?3200:1600)/bitmap.width,(menu?3200:1600)/bitmap.height);
     const canvas=document.createElement('canvas');canvas.width=Math.round(bitmap.width*scale);canvas.height=Math.round(bitmap.height*scale);canvas.getContext('2d').drawImage(bitmap,0,0,canvas.width,canvas.height);bitmap.close?.();
-    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',.9));if(!blob||blob.size>4194304)throw new Error('사진 크기를 줄여 다시 선택해 주세요.');
-    const path=city+'/'+crypto.randomUUID()+'.webp';try{await checked(client.storage.from('tripfact-business-photos').upload(path,blob,{contentType:'image/webp',upsert:false}));}catch(error){throw new Error('대표사진 업로드 실패: '+error.message+' · 관리자 권한과 044 업체 수정 설정 SQL을 확인해 주세요.');}return path;
+    const blob=await new Promise(resolve=>canvas.toBlob(resolve,'image/webp',menu ? .94 : .9));if(!blob||blob.size>4194304)throw new Error('사진 크기를 줄여 다시 선택해 주세요.');
+    const path=city+'/'+crypto.randomUUID()+'.webp';try{await checked(client.storage.from('tripfact-business-photos').upload(path,blob,{contentType:'image/webp',upsert:false}));}catch(error){throw new Error((menu?'메뉴판':'대표사진')+' 업로드 실패: '+error.message+' · 관리자 권한과 044 업체 수정 설정 SQL을 확인해 주세요.');}return path;
   }
   async function edit(id){
     if(!admin)return;const p=places.find(p=>p.id===id);if(!p)return;
@@ -5268,24 +5289,25 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
       <label>위치보기 링크<input type="url" name="map" value="${esc(initial.map)}" placeholder="https://…"></label>
       <label>문의·예약 링크<input type="url" name="booking" value="${esc(initial.booking)}" placeholder="https://…"></label>
       <div class="business-edit-actions"><button class="primary" type="submit">저장</button><button type="button" class="vendor-link" data-cancel>취소</button>${old&&!p.isOperatorBusiness?'<button type="button" class="vendor-link" data-reset>시트 내용으로 되돌리기</button>':''}</div><p role="status" aria-live="polite"></p></form>`;
-    const form=$('modalContent').querySelector('form'),status=form.querySelector('[role=status]'),preview=form.querySelector('.business-edit-preview');const menuEditor=tripfactBusinessMenus.mount(form,p);let previewUrl=null;
+    const form=$('modalContent').querySelector('form'),status=form.querySelector('[role=status]'),preview=form.querySelector('.business-edit-preview');const menuEditor=tripfactBusinessMenus.mount(form,p);let uploadedMenus=[];const menuPhotos=tripfactMenuPhotos.mount(form,p,async file=>{const path=await photo(file,true);uploadedMenus.push(path);return path;},originUrl);let previewUrl=null;
     form.elements.photo.onchange=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);const f=form.elements.photo.files[0];if(f){previewUrl=URL.createObjectURL(f);preview.src=previewUrl;preview.hidden=false;}};
-    const cleanup=()=>{if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}};
+    const cleanup=()=>{menuPhotos.dispose();if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}};
     form.querySelector('[data-cancel]').onclick=()=>{cleanup();openPlace(id);};
     async function save(reset=false){
-      form.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent='저장 중…';let uploaded='';
+      form.querySelectorAll('button').forEach(b=>b.disabled=true);status.textContent='저장 중…';let uploaded='';uploadedMenus=[];
       try{
         const patch={};
         if(!reset){for(const k of Object.keys(initial))if(form.elements[k].value!==initial[k])patch[k]=form.elements[k].value.trim();
           if('adminTags'in patch){patch.adminTags=[...new Set(patch.adminTags.split(/[#,\n]/).map(s=>s.trim()).filter(Boolean))];if(patch.adminTags.length>12||patch.adminTags.some(t=>t.length>40))throw new Error('해시태그는 40자 이하로 최대 12개까지 입력해 주세요.');}
           if(menuEditor.changed())patch.serviceMenus=[...(p.serviceMenus||[]).filter(m=>m.category!==p.category),...menuEditor.read()];
+          if(menuPhotos.changed())patch.menuPhotos=await menuPhotos.read();
           const selected=form.querySelector('[name=galleryPhoto]:checked')?.value;if(selected&&selected!==originalPhoto){patch.imageUrl=selected;patch.imagePath='';}
           const file=form.elements.photo.files[0];if(file){uploaded=await photo(file);patch.imagePath=uploaded;patch.imageUrl='';}
           if(!Object.keys(patch).length){status.textContent='수정한 내용이 없습니다.';return;}
         }
         const result=await checked(client.rpc('tripfact_save_business_edit',{p_city:city,p_business:p.sourceId,p_patch:patch,p_version:version,p_reset:reset}));
         edits.set(p.sourceId,result);merge();cleanup();redraw();openPlace(id);toast('업체정보를 저장했습니다.');
-      }catch(error){if(uploaded)await client.storage.from('tripfact-business-photos').remove([uploaded]);status.textContent=error.message;}
+      }catch(error){if(uploadedMenus.length)await client.storage.from('tripfact-business-photos').remove(uploadedMenus);if(uploaded)await client.storage.from('tripfact-business-photos').remove([uploaded]);status.textContent=error.message;}
       finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);}
     }
     form.onsubmit=event=>{event.preventDefault();if(form.reportValidity())save();};form.querySelector('[data-reset]')?.addEventListener('click',()=>save(true));
@@ -5319,7 +5341,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
         if(form.elements.photo.files[0]){uploaded=await photo(form.elements.photo.files[0]);data.imagePath=uploaded;}
         const result=await checked(client.rpc('tripfact_create_business',{p_city:city,p_business:source,p_data:data}));edits.set(source,result);merge();
         openBeautyDirectory(selected[0]);resetDirectoryFilters();directory.query=data.createdBusiness.name;renderDirectoryControls();renderDirectoryRows();closeModal();toast('업체를 등록했습니다.');
-      }catch(error){if(uploaded)await client.storage.from('tripfact-business-photos').remove([uploaded]);status.textContent=error.message;}
+      }catch(error){if(uploadedMenus.length)await client.storage.from('tripfact-business-photos').remove(uploadedMenus);if(uploaded)await client.storage.from('tripfact-business-photos').remove([uploaded]);status.textContent=error.message;}
       finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);}
     };
     $('modal').classList.remove('hidden');document.body.style.overflow='hidden';$('modal').querySelector('.dialog').focus();

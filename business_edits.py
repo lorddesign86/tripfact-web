@@ -1,6 +1,6 @@
 """Operator edits are layered after sheet publication; city and source IDs never change."""
 from urllib.parse import urlencode,quote
-FIELDS=('adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden','serviceMenus')
+FIELDS=('adminIntro','adminTags','menuSummary','hours','map','booking','name','region','address','adminHidden','menuPhotos','serviceMenus')
 def apply_business_edits(places,rows,city,origin):
  index={r['business_id']:r for r in rows if r.get('city_slug')==city}
  pairs={(p.get('sourceId'),p.get('category'))for p in places}
@@ -15,7 +15,7 @@ def apply_business_edits(places,rows,city,origin):
  for p in places:
   row=index.get(p.get('sourceId'))
   if not row:continue
-  patch=row.get('patch')or {};p['editorBase']={k:p.get(k)for k in (*FIELDS,'menus','price','priceValue','priceBasis','image','imageThumb','imageOriginal','imageSource','short','loc')}
+  patch=row.get('patch')or {};p['editorBase']={k:p.get(k)for k in (*FIELDS,'menus','price','priceValue','priceBasis','image','imageThumb','imageOriginal','imageSource','short','loc','menuImages')}
   for k in FIELDS:
    if k in patch:p[k]=patch[k]
   if 'name'in patch:p['short']=patch['name']
@@ -24,6 +24,8 @@ def apply_business_edits(places,rows,city,origin):
   if patch.get('imagePath'):image=origin.rstrip('/')+'/storage/v1/object/public/tripfact-business-photos/'+quote(patch['imagePath'],safe='/')
   if 'imageUrl'in patch or 'imagePath'in patch:
    p.update(image=image,imageThumb=image,imageOriginal=image,imageSource='')
+  if 'menuPhotos'in patch:
+   p['menuImages']=[{'url':origin.rstrip('/')+'/storage/v1/object/public/tripfact-business-photos/'+quote(x['path'],safe='/')if x.get('path')else x.get('url',''),'alt':'메뉴판·가격표'}for x in patch['menuPhotos']]
   apply_service_menus(p)
   p['editVersion']=row.get('version',0)
  return places
