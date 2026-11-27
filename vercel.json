@@ -60,7 +60,7 @@
   ],
   "functions": {
     "api/catalog.py": {
-      "includeFiles": "{destination_landing.py,catalog-template.html,city-data/*.json,assets/branding/*-qr.png}"
+      "includeFiles": "{destination_landing.py,catalog-template.html,city-data/*.json,assets/branding/*-qr.png,assets/regional-photos/manifest.json}"
     },
     "api/article-generate.py": {
       "maxDuration": 300
