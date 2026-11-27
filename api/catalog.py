@@ -57,8 +57,8 @@ def render_catalog(city,live=True):
     snapshot['places']=load_business_edits(snapshot['places'],city)
     from photo_gallery import ensure_main_photos
     ensure_main_photos(snapshot['places'])
-    snapshot['hiddenPlaces']=[p for p in snapshot['places'] if p.get('adminHidden') is True]
-    snapshot['places']=[p for p in snapshot['places'] if p.get('adminHidden') is not True]
+    snapshot['hiddenPlaces']=[p for p in snapshot['places'] if p.get('adminHidden') is True or p.get('category')in (p.get('hiddenCategories')or[])]
+    snapshot['places']=[p for p in snapshot['places'] if p.get('adminHidden') is not True and p.get('category')not in (p.get('hiddenCategories')or[])]
     html=with_data(html,snapshot)
     qr=ROOT/'assets/branding'/(city+'-qr.png')
     if qr.exists():
