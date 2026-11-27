@@ -510,6 +510,10 @@ details summary{cursor:pointer;list-style:none;font-size:11px;font-weight:650;co
 .business-menu-editor{grid-column:1/-1;min-width:0;border:1px solid var(--line);padding:12px;border-radius:10px}.business-menu-input{display:grid;grid-template-columns:minmax(0,1.4fr) minmax(0,1fr) 28px;gap:8px;margin:7px 0}.business-menu-input input{min-width:0;width:100%}.business-menu-input button{padding:2px}.business-aroma-price{display:flex;align-items:baseline;gap:10px;color:var(--green);line-height:1.5}.business-aroma-price small{font-size:11px}.business-aroma-price b{font-size:14px}
 
 .business-menu-photo-editor{margin:16px 0;border:1px solid #dbe5d7;border-radius:12px;padding:14px;min-width:0}.business-menu-photo-editor>small{display:block;color:#778577;font-size:12px;line-height:1.5}.business-menu-photo-editor details{margin:10px 0}.business-menu-photo-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:12px}.business-menu-photo-grid>div{min-width:0;border:1px solid #e0e8db;padding:6px;border-radius:8px}.business-menu-photo-grid img{width:100%;height:110px;object-fit:contain;background:#f6f8f2}.business-menu-photo-grid small{display:block}.business-menu-photo-grid button{margin-top:4px}@media(max-width:500px){.business-menu-photo-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+.business-menu-pins{grid-column:1/-1;display:flex;gap:18px;padding:2px 0 7px;border-bottom:1px solid #e4ebdf}.business-menu-pins label{display:flex!important;align-items:center;gap:5px;font-size:12px;color:#4d6c5b}.business-menu-pins input{width:16px!important;height:16px;accent-color:#23846b}.business-menu-default-tools{margin-top:14px;padding-top:12px;border-top:1px solid #e2e8dc}.business-menu-default-tools small{display:block;font-size:11px;color:#7b8877;line-height:1.6;margin-top:7px}.business-menu-default-tools p{font-size:12px;color:#28634f}
+
+.business-price-primary{font-style:normal;font-size:9px;color:#287958;background:#e9f2df;border-radius:4px;padding:2px 4px;margin-left:5px}
 </style></head>
 <body>
 <div class="top"><header class="wrap header"><a class="brand" href="#home" aria-label="지금 다낭중 홈"><span class="brand-icon">🌴</span><div><strong>다낭 지금 다낭중<span style="color:#e6a56b">.</span></strong><small>YOUR LITTLE TRAVEL BUDDY</small></div></a><nav class="desktop-nav" aria-label="주 메뉴"><button data-tab="home" class="active">여행 홈</button><button data-tab="market">쇼핑시세</button><button data-tab="spa">케어 & 뷰티</button><button data-tab="dining">맛집 & 카페</button></nav><button class="saved-top" data-tab="favs">♡ 내 찜 <b id="savedCount">0</b></button></header></div>
@@ -4507,7 +4511,7 @@ async function renderAdminArticles(container,call,generate,readArticle,city=wind
     $('listDesc').textContent='마사지·네일·이발관·맛집·카페를 지역과 조건으로 찾아보세요.';
     $('listPage').querySelector('.menu-ad')?.remove();
     const note=$('listFilters').querySelector('.directory-note');
-    if(note)note.textContent=directory.category==='마사지'?'가격은 확인된 대표 코스 기준입니다. 코스 구성과 추가 비용은 상세에서 확인하세요.':'가격과 서비스 구성은 업체 상세에서 확인하세요.';
+    if(note)note.textContent=directory.category==='마사지'?'가격 정렬·금액 필터는 각 업체의 대표가격 기준입니다.':'가격과 서비스 구성은 업체 상세에서 확인하세요.';
   };
   const rows=renderDirectoryRows;
   renderDirectoryRows=function(){
@@ -4535,36 +4539,56 @@ async function renderAdminArticles(container,call,generate,readArticle,city=wind
 
 (() => {
  const valid=value=>Number.isSafeInteger(value)&&value>0&&value<=1000000000;
- const defaults=['아로마 60분','아로마 90분'];
+ const key=value=>String(value||'').replace(/\s/g,'').toLowerCase();
+ let defaults={};
+ const builtin=category=>category==='마사지'?[{name:'아로마 60분',featured:true,primary:true},{name:'아로마 90분',featured:true,primary:false}]:[];
+ const template=p=>defaults[p.category]||p.menuDisplayDefaults||builtin(p.category);
  function rows(p){
   if(Array.isArray(p.serviceMenus)&&p.serviceMenus.some(m=>m.category===p.category))return p.serviceMenus.filter(m=>m.category===p.category);
   return (p.menus||[]).filter(m=>valid(m.low)&&m.low===m.high).map(m=>({name:m.name,price:m.low,category:p.category}));
  }
+ function selection(p){
+  const available=rows(p),custom=available.some(m=>typeof m.featured==='boolean'||typeof m.primary==='boolean');
+  if(custom)return {available,featured:available.filter(m=>m.featured&&valid(m.price)).slice(0,3),primary:available.find(m=>m.primary&&valid(m.price)),explicit:true};
+  const choices=template(p),featured=choices.map(t=>available.find(m=>key(m.name)===key(t.name)&&valid(m.price)&&t.featured)).filter(Boolean);
+  const primary=available.find(m=>valid(m.price)&&choices.some(t=>t.primary&&key(t.name)===key(m.name)));
+  return {available,featured,primary,explicit:!!(defaults[p.category]||p.menuDisplayDefaults)};
+ }
  function apply(p){
-  if(!Array.isArray(p.serviceMenus)||!p.serviceMenus.some(m=>m.category===p.category))return;
-  const selected=rows(p).filter(m=>valid(m.price));
-  p.menus=selected.map(m=>({name:m.name,low:m.price,high:m.price,conditions:'',source:'',date:''}));
-  const aroma=n=>selected.find(m=>new RegExp('아로마\\s*'+n+'\\s*분').test(m.name));
-  const main=p.category==='마사지'?(aroma(60)||aroma(90)||selected[0]):selected[0];
+  const s=selection(p),selected=s.available.filter(m=>valid(m.price));
+  if(Array.isArray(p.serviceMenus)&&p.serviceMenus.some(m=>m.category===p.category))p.menus=selected.map(m=>({name:m.name,low:m.price,high:m.price,conditions:'',source:'',date:''}));
+  else if(!s.explicit&&p.category!=='마사지')return;
+  const aroma=n=>selected.find(m=>key(m.name)==='아로마'+n+'분');
+  const main=s.primary||s.featured[0]||(p.category==='마사지'?(aroma(60)||aroma(90)||selected[0]):selected[0]);
   p.priceValue=main?.price??null;p.price=main?fmt(main.price)+'동':'';p.priceBasis=main?.name||'';
  }
- function list(p){
-  if(p.category!=='마사지')return '';
-  const available=Array.isArray(p.serviceMenus)&&p.serviceMenus.some(m=>m.category===p.category)?rows(p):(p.menus||[]).map(m=>({name:m.name,price:m.low}));
-  return [60,90].map(n=>{const m=available.find(m=>new RegExp('아로마\\s*'+n+'\\s*분').test(m.name)&&valid(m.price));return m?'<span class="business-aroma-price"><small>아로마 '+n+'분</small><b>'+escapeHTML(fmt(m.price))+'동</b></span>':'';}).join('');
- }
- function mount(form,p){
-  const field=document.createElement('fieldset');field.className='business-menu-editor';field.innerHTML='<legend>메뉴 · 가격 (VND)</legend><p class="vendor-help">가격을 입력한 메뉴만 공개합니다.</p><div data-menu-rows></div><button type="button" class="vendor-link" data-add-menu>＋ 메뉴 추가</button>';
-  form.querySelector('.business-edit-actions').before(field);const area=field.querySelector('[data-menu-rows]');
+ function list(p){const s=selection(p);if(p.category!=='마사지'&&!s.explicit&&!s.available.some(m=>typeof m.featured==='boolean'))return '';const featured=[...s.featured].sort((a,b)=>Number(b.name===p.priceBasis)-Number(a.name===p.priceBasis));return featured.map(m=>'<span class="business-aroma-price"><small>'+escapeHTML(m.name)+(key(m.name)===key(p.priceBasis)&&m.price===p.priceValue?'<em class="business-price-primary">대표</em>':'')+'</small><b>'+escapeHTML(fmt(m.price))+'동</b></span>').join('');}
+ function mount(form,p,{saveDefaults=null}={}){
+  const field=document.createElement('fieldset');field.className='business-menu-editor';field.innerHTML='<legend>메뉴 · 가격 (VND)</legend><p class="vendor-help">목록 노출은 최대 3개 · 대표가격은 1개 선택합니다.<br>대표가격은 가격 정렬과 금액 필터에도 사용됩니다. 가격이 없는 메뉴는 공개하지 않습니다.</p><div data-menu-rows></div><button type="button" class="vendor-link" data-add-menu>＋ 메뉴 추가</button><div class="business-menu-default-tools"><button type="button" class="vendor-link" data-save-menu-default>이 구성을 '+escapeHTML(p.category)+' 기본 메뉴로 저장</button><small>세 도시 공통 · 메뉴명과 노출 설정만 저장하며 업체별 가격은 복사하지 않습니다. 개별 업체에 저장한 설정은 유지됩니다.</small><p role="status" data-menu-default-status></p></div>';
+  form.querySelector('.business-edit-actions').before(field);const area=field.querySelector('[data-menu-rows]'),choices=template(p),s=selection(p);
   let entries=rows(p).map(m=>({...m}));
-  if(p.category==='마사지')for(const name of [...defaults].reverse()){if(!entries.some(m=>m.name.replace(/\s/g,'')===name.replace(/\s/g,'')))entries.unshift({name,price:null,category:p.category});}
+  for(const t of [...choices].reverse())if(!entries.some(m=>key(m.name)===key(t.name)))entries.unshift({name:t.name,price:null,category:p.category});
   if(!entries.length)entries=[{name:'',price:null,category:p.category}];
-  function add(m){const row=document.createElement('div');row.className='business-menu-input';row.innerHTML='<input data-menu-name aria-label="메뉴명" maxlength="100" placeholder="메뉴명"><input data-menu-price aria-label="가격 (동)" inputmode="numeric" type="number" min="1" max="1000000000" step="1" placeholder="가격 (동)"><button type="button" aria-label="메뉴 삭제">×</button>';row.querySelector('[data-menu-name]').value=m.name;row.querySelector('[data-menu-price]').value=m.price||'';row.querySelector('button').onclick=()=>row.remove();area.append(row);}
+  const custom=s.available.some(m=>typeof m.featured==='boolean'||typeof m.primary==='boolean');
+  function add(m){const row=document.createElement('div');row.className='business-menu-input';row.innerHTML='<input data-menu-name aria-label="메뉴명" maxlength="100" placeholder="메뉴명"><input data-menu-price aria-label="가격 (동)" inputmode="numeric" type="number" min="1" max="1000000000" step="1" placeholder="가격 (동)"><button type="button" aria-label="메뉴 삭제">×</button><div class="business-menu-pins"><label><input type="checkbox" data-menu-featured> 목록 노출</label><label><input type="checkbox" data-menu-primary> 대표가격</label></div>';
+   row.querySelector('[data-menu-name]').value=m.name;row.querySelector('[data-menu-price]').value=m.price||'';
+   const t=choices.find(t=>key(t.name)===key(m.name)),featured=row.querySelector('[data-menu-featured]'),primary=row.querySelector('[data-menu-primary]');featured.checked=custom?!!m.featured:!!t?.featured;primary.checked=custom?!!m.primary:!!t?.primary;
+   featured.onchange=()=>{if(!featured.checked)primary.checked=false;};primary.onchange=()=>{if(primary.checked){area.querySelectorAll('[data-menu-primary]').forEach(n=>{if(n!==primary)n.checked=false;});featured.checked=true;}};
+   row.querySelector('button').onclick=()=>row.remove();area.append(row);
+  }
   entries.forEach(add);field.querySelector('[data-add-menu]').onclick=()=>add({name:'',price:null});
-  function read(){const result=[...area.children].map(row=>({name:row.querySelector('[data-menu-name]').value.trim(),price:row.querySelector('[data-menu-price]').value===''?null:Number(row.querySelector('[data-menu-price]').value),category:p.category})).filter(m=>m.name||m.price!==null);if(result.length>60)throw new Error('메뉴는 최대 60개까지 입력해 주세요.');if(result.some(m=>!m.name||(m.price!==null&&!valid(m.price))))throw new Error('메뉴명과 숫자 가격을 확인해 주세요.');return result.length?result:[{name:'메뉴',price:null,category:p.category}];}
-  const initial=JSON.stringify(read());return {read,changed:()=>JSON.stringify(read())!==initial};
+  function read(validate=true){const result=[...area.children].map(row=>({name:row.querySelector('[data-menu-name]').value.trim(),price:row.querySelector('[data-menu-price]').value===''?null:Number(row.querySelector('[data-menu-price]').value),category:p.category,featured:row.querySelector('[data-menu-featured]').checked,primary:row.querySelector('[data-menu-primary]').checked})).filter(m=>m.name||m.price!==null);
+   if(result.length>60)throw new Error('메뉴는 최대 60개까지 입력해 주세요.');if(result.some(m=>!m.name||(m.price!==null&&!valid(m.price))))throw new Error('메뉴명과 숫자 가격을 확인해 주세요.');if(new Set(result.map(m=>key(m.name))).size!==result.length)throw new Error('같은 메뉴명을 중복 입력하지 마세요.');
+   if(result.filter(m=>m.featured).length>3)throw new Error('목록 노출은 최대 3개까지 선택해 주세요.');
+   if(validate&&result.some(m=>m.primary&&!valid(m.price)))throw new Error('대표가격으로 선택한 메뉴에 가격을 입력해 주세요.');
+   if(validate&&result.some(m=>valid(m.price))&&!result.some(m=>m.featured&&valid(m.price)))throw new Error('가격이 있는 메뉴 중 목록에 노출할 메뉴를 선택해 주세요.');
+   return result.length?result:[{name:'메뉴',price:null,category:p.category,featured:false,primary:false}];
+  }
+  field.querySelector('[data-save-menu-default]').hidden=!saveDefaults;
+  field.querySelector('[data-save-menu-default]').onclick=async()=>{const button=field.querySelector('[data-save-menu-default]'),status=field.querySelector('[data-menu-default-status]');try{const menus=read(false).map(({name,featured,primary})=>({name,featured,primary}));if(!menus.some(m=>m.featured))throw new Error('기본으로 노출할 메뉴를 선택해 주세요.');button.disabled=true;await saveDefaults(p.category,menus);defaults[p.category]=menus;status.textContent=p.category+' 기본 메뉴 구성을 저장했습니다. 업체별 가격은 유지됩니다.';}catch(e){status.textContent=e.message;}finally{button.disabled=false;}};
+  const initial=JSON.stringify(read(false));return {read,changed:()=>JSON.stringify(read(false))!==initial};
  }
- window.tripfactBusinessMenus={apply,list,mount};
+ window.tripfactBusinessMenus={apply,list,mount,setDefaults(rows){defaults=Object.fromEntries((Array.isArray(rows)?rows:[]).map(r=>[r.category,r.menus]));}};
 })();
 
 (() => {
@@ -5258,6 +5282,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
       client=await tripfactAccount.client();
       const session=(await checked(client.auth.getSession())).session;
       const allowed=session?await checked(client.rpc('tripfact_is_admin',{})):false;
+      const menuDefaults=await checked(client.rpc('tripfact_business_menu_defaults',{})).catch(()=>[]);tripfactBusinessMenus.setDefaults(menuDefaults);
       const rows=await checked(client.from('tripfact_business_edits').select('city_slug,business_id,patch,version,updated_at').eq('city_slug',city));
       if(version!==identityVersion)return;
       admin=allowed===true;edits=new Map(rows.filter(r=>r.city_slug===city).map(r=>[r.business_id,r]));merge();redraw();decorate();
@@ -5289,7 +5314,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
       <label>위치보기 링크<input type="url" name="map" value="${esc(initial.map)}" placeholder="https://…"></label>
       <label>문의·예약 링크<input type="url" name="booking" value="${esc(initial.booking)}" placeholder="https://…"></label>
       <div class="business-edit-actions"><button class="primary" type="submit">저장</button><button type="button" class="vendor-link" data-cancel>취소</button>${old&&!p.isOperatorBusiness?'<button type="button" class="vendor-link" data-reset>시트 내용으로 되돌리기</button>':''}</div><p role="status" aria-live="polite"></p></form>`;
-    const form=$('modalContent').querySelector('form'),status=form.querySelector('[role=status]'),preview=form.querySelector('.business-edit-preview');const menuEditor=tripfactBusinessMenus.mount(form,p);let uploadedMenus=[];const menuPhotos=tripfactMenuPhotos.mount(form,p,async file=>{const path=await photo(file,true);uploadedMenus.push(path);return path;},originUrl);let previewUrl=null;
+    const form=$('modalContent').querySelector('form'),status=form.querySelector('[role=status]'),preview=form.querySelector('.business-edit-preview');const menuEditor=tripfactBusinessMenus.mount(form,p,{saveDefaults:async(category,menus)=>{await checked(client.rpc('tripfact_save_menu_defaults',{p_category:category,p_menus:menus}));}});let uploadedMenus=[];const menuPhotos=tripfactMenuPhotos.mount(form,p,async file=>{const path=await photo(file,true);uploadedMenus.push(path);return path;},originUrl);let previewUrl=null;
     form.elements.photo.onchange=()=>{if(previewUrl)URL.revokeObjectURL(previewUrl);const f=form.elements.photo.files[0];if(f){previewUrl=URL.createObjectURL(f);preview.src=previewUrl;preview.hidden=false;}};
     const cleanup=()=>{menuPhotos.dispose();if(previewUrl){URL.revokeObjectURL(previewUrl);previewUrl=null;}};
     form.querySelector('[data-cancel]').onclick=()=>{cleanup();openPlace(id);};
@@ -5341,7 +5366,7 @@ function renderUnifiedAdminWorkspace(container,initial,onSelect,call,advertisers
         if(form.elements.photo.files[0]){uploaded=await photo(form.elements.photo.files[0]);data.imagePath=uploaded;}
         const result=await checked(client.rpc('tripfact_create_business',{p_city:city,p_business:source,p_data:data}));edits.set(source,result);merge();
         openBeautyDirectory(selected[0]);resetDirectoryFilters();directory.query=data.createdBusiness.name;renderDirectoryControls();renderDirectoryRows();closeModal();toast('업체를 등록했습니다.');
-      }catch(error){if(uploadedMenus.length)await client.storage.from('tripfact-business-photos').remove(uploadedMenus);if(uploaded)await client.storage.from('tripfact-business-photos').remove([uploaded]);status.textContent=error.message;}
+      }catch(error){if(uploaded)await client.storage.from('tripfact-business-photos').remove([uploaded]);status.textContent=error.message;}
       finally{form.querySelectorAll('button').forEach(b=>b.disabled=false);}
     };
     $('modal').classList.remove('hidden');document.body.style.overflow='hidden';$('modal').querySelector('.dialog').focus();
