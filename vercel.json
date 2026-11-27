@@ -2,7 +2,7 @@
   "rewrites": [
     {
       "source": "/",
-      "destination": "/api/catalog"
+      "destination": "/api/catalog?view=destinations"
     },
     {
       "source": "/information",
@@ -60,7 +60,7 @@
   ],
   "functions": {
     "api/catalog.py": {
-      "includeFiles": "{catalog-template.html,city-data/*.json,assets/branding/*-qr.png}"
+      "includeFiles": "{destination_landing.py,catalog-template.html,city-data/*.json,assets/branding/*-qr.png}"
     },
     "api/article-generate.py": {
       "maxDuration": 300

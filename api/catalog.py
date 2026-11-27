@@ -77,6 +77,11 @@ def render_catalog(city,live=True):
 
 class handler(BaseHTTPRequestHandler):
     def do_GET(self):
+        parsed=urlparse(self.path);query=parse_qs(parsed.query)
+        if query.get('view')==['destinations'] or (parsed.path in ('/','/api/catalog','/api/destinations') and not query.get('destination') and not query.get('city')):
+            from destination_landing import render_landing
+            payload=render_landing().encode('utf-8')
+            self.send_response(200);self.send_header('Content-Type','text/html; charset=utf-8');self.send_header('Cache-Control','public, s-maxage=300');self.send_header('Content-Length',str(len(payload)));self.end_headers();self.wfile.write(payload);return
         city=resolve_city(self.path)
         if city is None:
             self.send_response(404);self.send_header('Content-Type','text/plain; charset=utf-8');self.end_headers();self.wfile.write('페이지를 찾을 수 없습니다'.encode());return
