@@ -193,9 +193,9 @@ def build_snapshot(tables, city='danang'):
 
     if city=='danang':places=attach_photo_galleries(places,tables)
     else:
-        from regional_photo_assets import approved_candidates,attach_assets
+        from regional_photo_assets import approved_candidates,attach_assets,declared_keys
         approved,_=approved_candidates(tables,city)
-        places=attach_assets(places,city,approved_rows=approved)
+        places=attach_assets(places,city,approved_rows=approved,declared_candidates=declared_keys(tables,city))
 
     products = []
     for row in tables['쇼핑목록']:

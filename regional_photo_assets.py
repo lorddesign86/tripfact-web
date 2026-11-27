@@ -1,4 +1,4 @@
-"""Strict regional photo approvals plus a first-party storage manifest. No cross-city fallback."""
+"""Regional photo approvals and explicit owner publication. First-party storage; no cross-city fallback."""
 import json,re
 from pathlib import Path
 from collections import defaultdict,Counter
@@ -54,19 +54,43 @@ def approved_candidates(tables,city):
     selected.setdefault(key,item)
  return list(selected.values()),{'businesses':businesses,'held':held,'reasons':dict(Counter(reason for r in held for reason in r['reasons']))}
 
+def declared_keys(tables,city):
+ expected={'nhatrang':'나트랑','phuquoc':'푸꾸옥'}[city]
+ return {(text(r,'업체ID'),canonical(url))for tab in CATEGORIES for r in tables.get(tab,[])if text(r,'도시')in('',expected)for url in candidates(r)}
+
+def operator_candidates(tables,city):
+ # Explicit owner instruction to publish candidates; review/rights states stay truthful.
+ refs={(text(r,'업체ID'),canonical(text(r,'이미지 원본 URL'))):r for r in tables.get('출처·이미지',[])}
+ selected={};businesses=[]
+ for tab,category in CATEGORIES.items():
+  for row in tables.get(tab,[]):
+   if text(row,'도시')not in('',{'nhatrang':'나트랑','phuquoc':'푸꾸옥'}[city]):continue
+   business=text(row,'업체ID');urls=candidates(row)
+   if not business:continue
+   businesses.append({'city':city,'category':category,'businessId':business,'candidateCount':len(urls)})
+   for order,url in enumerate(urls):
+    identity=(business,canonical(url));ref=refs.get(identity,{})
+    kind='menu'if re.search(r'메뉴판|가격표|메뉴\s*이미지',text(ref,'자료 구분')+' '+text(ref,'지점·피사체 확인'))else'general'
+    selected.setdefault(identity,{'city':city,'businessId':business,'originalUrl':url,'sourceUrl':https(text(ref,'출처 페이지 URL'))or https(text(row,'이미지 출처 URL')),'credit':text(ref,'사진 표시 크레딧'),'width':integer(ref.get('가로 px')),'height':integer(ref.get('세로 px')),'kind':kind,'order':order,'preferredMain':canonical(url)==canonical(text(row,'메인이미지 원본 URL')),'operatorPublished':True,'publicationBasis':'explicit-owner-request','approved':approved(text(ref,'사이트 게시 가능')),'branchConfirmed':False,'rightsConfirmed':False,'sourceReview':{k:text(ref,k)for k in('사이트 게시 가능','지점·피사체 확인','사진 사용 허락·라이선스','허락 근거 URL')}})
+ return list(selected.values()),{'businesses':businesses,'held':[],'reasons':{}}
+
 def read_manifest():
  path=Path(__file__).resolve().parent/'assets/regional-photos/manifest.json'
  try:return json.loads(path.read_text(encoding='utf-8'))
  except (OSError,ValueError):return {'photos':[]}
 
-def attach_assets(places,city,manifest=None,approved_rows=None):
+def attach_assets(places,city,manifest=None,approved_rows=None,declared_candidates=None):
  manifest=manifest or read_manifest();origin=https(manifest.get('storageOrigin',''));bucket=manifest.get('bucket','tripfact-regional-photos')
  prefix=origin.rstrip('/')+'/storage/v1/object/public/'+bucket+'/'if origin else''
  allowed={(p['businessId'],canonical(p['originalUrl']))for p in approved_rows}if approved_rows is not None else None
  by_id=defaultdict(list)
  for photo in manifest.get('photos',[]):
   identity=(photo.get('businessId'),canonical(photo.get('originalUrl','')))
-  if photo.get('city')!=city or not all(photo.get(k)is True for k in('approved','branchConfirmed','rightsConfirmed'))or(allowed is not None and identity not in allowed):continue
+  owner=photo.get('operatorPublished')is True and photo.get('publicationBasis')=='explicit-owner-request'
+  if photo.get('city')!=city:continue
+  if owner:
+   if declared_candidates is not None and identity not in declared_candidates:continue
+  elif not all(photo.get(k)is True for k in('approved','branchConfirmed','rightsConfirmed'))or(allowed is not None and identity not in allowed):continue
   if not prefix or not https(photo.get('url','')).startswith(prefix)or not https(photo.get('thumbUrl','')).startswith(prefix):continue
   by_id[photo['businessId']].append(photo)
  for place in places:
